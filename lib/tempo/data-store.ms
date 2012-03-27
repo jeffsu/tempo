@@ -28,6 +28,63 @@ export class DataStore {
     }
   }
 
+  function flushHistory() {
+    for (var time in this.history) {
+      var hData = this.history[time].data;
+      var sData = this.getBucket(time, this.sync).data;
+
+      for (var key in hData) {
+        var hItem = hData[key];
+        var sItem = sData[key] || sData[key] = {};
+        hBucket[data] = 0;
+
+        for (var attr in hItem) {
+          sItem[attr] = (sItem[attr] || 0) + hItem[attr];
+        }
+      }
+    }
+  }
+
+  function redisSync(redis, prefix) {
+    var commands  = [];
+    var expires   = [];
+    var redisKeys = [];
+
+    prefix = prefix ? prefix + ':' : '';
+
+    for (var time in this.history) {
+      var bucket = this.history[time];
+      for (var key in bucket) {
+        var item = bucket[key];
+        for (var attr in item) {
+          var val = item[val];
+          var redisKey = prefix + key + ':' + time;
+          redisKeys.push([ time, key, attr ]);
+          commands.push([ 'HINCRBY', redisKey, attr, val ]);
+          expires.push([ 'PEXPIREAT', redisKey, time + this.totalTime ]);
+        }
+      }
+    }
+
+    foreach (var exp in info[0]) {
+      commands.push(exp);
+    }
+
+    redis.multi(commands, #(err, data) {
+      foreach (var rkey:i in rkeys) {
+        var time = rkey[0];
+        var key  = rkey[1];
+        var attr = rkey[2];
+
+        var data = this.getBucket(time, this.sync).data;
+        var item = data[key] || data[key] = {};
+        item[attr] = data[i];
+      }
+    });
+
+    this.flushHistory();
+  }
+
   function getTotal(key, attr) {
     var total = 0;
     var floor = this.getFloor();
@@ -52,10 +109,16 @@ export class DataStore {
 
   function getHistory(key, attr) {
     var floor = this.getFloor();
+    var attrs = attr instanceof Array ? attr : [ attr ];
+    var ret = [];
 
-    for (var i=0; i<this.nBuckets; i++) {
+    for (var i=this.nBuckets-1; i>=0; i--) {
       var time = floor - (i * this.per);
-      ret.push([ time, this.getVal(key, attr, time) ])
+      var row  = [ time ];
+      foreach (var attr in attrs) {
+        row.push(this.getVal(key, attr, time));
+      }
+      ret.push(row);
     }
 
     return ret;

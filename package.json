@@ -8,9 +8,9 @@
   "engines": { "node": ">=0.4.0" },
   "directories": { "lib": "./lib/tempo" },
   "main" : "./lib/tempo/index",
-  "bin": {
-    "ms-parse": "./bin/ms-parse",
-    "ms-run":   "./bin/ms-run"
+  "bin": {},
+  "dependencies": { 
+    "mochiscript": ">=0.5.1"
   },
   "repository": {
     "type": "git",
