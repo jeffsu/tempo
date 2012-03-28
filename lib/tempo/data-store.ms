@@ -1,4 +1,5 @@
 export class DataStore {
+  include $m.EventEmitter;
 
   function initialize(config) {
     this.per      = config.per;
@@ -10,9 +11,10 @@ export class DataStore {
   }
 
   function increment(key, attr, n) {
-    var bucket = this.getBucket(this.now(), this.history);
-    var item   = bucket.data[key] = bucket.data[key] || {};
-    return item[attr] = (item[attr] || 0) + (n === undefined ? 1 : n);
+    var data = this.getBucket(this.now(), this.history).data;
+    var item = data[key] || (data[key] = {});
+    var ret = item[attr] = (item[attr] || 0) + (n === undefined ? 1 : n);
+    return ret;
   }
 
   function getVal(key, attr, time) {
@@ -35,11 +37,11 @@ export class DataStore {
 
       for (var key in hData) {
         var hItem = hData[key];
-        var sItem = sData[key] || sData[key] = {};
-        hBucket[data] = 0;
+        var sItem = sData[key] || (sData[key] = {});
 
         for (var attr in hItem) {
           sItem[attr] = (sItem[attr] || 0) + hItem[attr];
+          hItem[attr] = 0;
         }
       }
     }
@@ -53,33 +55,36 @@ export class DataStore {
     prefix = prefix ? prefix + ':' : '';
 
     for (var time in this.history) {
-      var bucket = this.history[time];
-      for (var key in bucket) {
-        var item = bucket[key];
+      var data = this.history[time].data;
+      for (var key in data) {
+        var item = data[key];
         for (var attr in item) {
-          var val = item[val];
+          var val = item[attr];
           var redisKey = prefix + key + ':' + time;
           redisKeys.push([ time, key, attr ]);
           commands.push([ 'HINCRBY', redisKey, attr, val ]);
-          expires.push([ 'PEXPIREAT', redisKey, time + this.totalTime ]);
+          expires.push([ 'EXPIREAT', redisKey, time + this.totalTime ]);
         }
       }
     }
 
-    foreach (var exp in info[0]) {
+    foreach (var exp in expires) {
       commands.push(exp);
     }
 
-    redis.multi(commands, #(err, data) {
-      foreach (var rkey:i in rkeys) {
+    var multi = redis.multi(commands);
+    multi.exec(#(err, results) {
+      if (err) return;
+      foreach (var rkey:i in redisKeys) {
         var time = rkey[0];
         var key  = rkey[1];
         var attr = rkey[2];
 
-        var data = this.getBucket(time, this.sync).data;
-        var item = data[key] || data[key] = {};
-        item[attr] = data[i];
+        var data = self.getBucket(time, self.sync).data;
+        var item = data[key] || (data[key] = {});
+        item[attr] = results[i];
       }
+      self.emit('sync');
     });
 
     this.flushHistory();

@@ -5,13 +5,13 @@ var PER = 100;
 var N   = 5;
 
 var ds = new tempo.DataStore({ per: PER, buckets: N });
-ds.increment('test', 'count');
-assert.equal(1, ds.getVal('test', 'count'));
+ds.increment('test', 'count', 5);
+assert.equal(5, ds.getVal('test', 'count'));
 var firstTime = tempo.now();
 
 setTimeout(#{
   ds.increment('test', 'count');
   assert.equal(1, ds.getVal('test', 'count', tempo.now()));
-  assert.equal(1, ds.getVal('test', 'count', firstTime));
-  assert.equal(2, ds.getTotal('test', 'count'));
+  assert.equal(5, ds.getVal('test', 'count', firstTime));
+  assert.equal(6, ds.getTotal('test', 'count'));
 }, PER);
