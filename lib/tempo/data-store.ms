@@ -23,7 +23,7 @@ export class DataStore {
     var hVal = this.getValFromHash(this.history, time, key, attr);
     var sVal = this.getValFromHash(this.sync, time, key, attr);
 
-    if (sVal === undefined && hVal === undefined) {
+    if (sVal === null && hVal === null) {
       return null;
     } else {
       return (sVal || 0) + (hVal || 0);
@@ -112,15 +112,18 @@ export class DataStore {
     return null;
   }
 
-  function getHistory(key, attr) {
+  // <key>, <attr1>, <attr2>, ...
+  function getHistory() {
+    var key   = arguments[0];
     var floor = this.getFloor();
-    var attrs = attr instanceof Array ? attr : [ attr ];
     var ret = [];
 
     for (var i=this.nBuckets-1; i>=0; i--) {
       var time = floor - (i * this.per);
       var row  = [ time ];
-      foreach (var attr in attrs) {
+
+      for (var j=1; j<arguments.length; j++) {
+        var attr = arguments[j];
         row.push(this.getVal(key, attr, time));
       }
       ret.push(row);

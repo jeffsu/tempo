@@ -1,6 +1,6 @@
 export class Average {
   function initialize(config) {
-    this.key   = config.key;
+    this.key   = config.key || 'default';
     this.store = config.store || (new DataStore(config));
   }
 
@@ -25,7 +25,7 @@ export class Average {
   }
 
   function getHistory() {
-    return this.store.getHistory(this.key, [ 'total', 'count' ])
+    return this.store.getHistory(this.key, 'total', 'count')
        .map(#(row) { => [ row[0], (row[2] ? row[1] / row[2] : null), row[1], row[2] ] });
   }
 }

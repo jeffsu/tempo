@@ -25,11 +25,15 @@ setTimeout(#{
   assert.equal(20, avg.getAverage());
 
   var started = avg.getHistory()[1]; // [ time, average, total, count ]
+  var middle  = avg.getHistory()[3];
   var latest  = avg.getHistory()[4];
 
   assert.equal(15, started[1]);
   assert.equal(30, started[2]);
   assert.equal(2,  started[3]);
+
+  assert.equal(null, middle[1]);
+  assert.equal(null, middle[2]);
 
   assert.equal(30, latest[1]);
   assert.equal(30, latest[2]);
