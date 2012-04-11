@@ -1,0 +1,6 @@
+### 0.0.1
+
+  * initial use cases
+    * added data-store
+    * added min, hour, day, week use cases
+    * redis sync
