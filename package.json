@@ -10,7 +10,8 @@
   "main" : "./lib/tempo/index",
   "bin": {},
   "dependencies": { 
-    "mochiscript": ">=0.5.1"
+    "mochiscript": ">=0.5.1",
+    "nested":      "0.0.1-pre2"
   },
   "repository": {
     "type": "git",

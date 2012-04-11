@@ -1,9 +1,12 @@
+var nested = require('nested');
 export class DataStore {
   include $m.EventEmitter;
 
   function initialize(config) {
     this.per      = config.per;
     this.nBuckets = config.buckets;
+    this.logCount = config.logs || (this.per / 1000);
+
     this.totalTime = this.per * this.nBuckets;
 
     this.sync    = {};
@@ -11,8 +14,7 @@ export class DataStore {
   }
 
   function increment(key, attr, n) {
-    var data = this.getBucket(this.now(), this.history).data;
-    var item = data[key] || (data[key] = {});
+    var item = this.getBucket(this.now(), this.history).items(key);
     var ret = item[attr] = (item[attr] || 0) + (n === undefined ? 1 : n);
     return ret;
   }
@@ -32,12 +34,12 @@ export class DataStore {
 
   function flushHistory() {
     for (var time in this.history) {
-      var hData = this.history[time].data;
-      var sData = this.getBucket(time, this.sync).data;
+      var hItems = this.history[time].items;
+      var sItems = this.getBucket(time, this.sync).items;
 
-      for (var key in hData) {
-        var hItem = hData[key];
-        var sItem = sData[key] || (sData[key] = {});
+      for (var key in hItems.data) {
+        var hItem = hItems(key);
+        var sItem = sItems(key);
 
         for (var attr in hItem) {
           sItem[attr] = (sItem[attr] || 0) + hItem[attr];
@@ -55,9 +57,9 @@ export class DataStore {
     prefix = prefix ? prefix + ':' : '';
 
     for (var time in this.history) {
-      var data = this.history[time].data;
-      for (var key in data) {
-        var item = data[key];
+      var items = this.history[time].items;
+      for (var key in items.data) {
+        var item = items(key);
         for (var attr in item) {
           var val = item[attr];
           var redisKey = prefix + key + ':' + time;
@@ -80,8 +82,7 @@ export class DataStore {
         var key  = rkey[1];
         var attr = rkey[2];
 
-        var data = self.getBucket(time, self.sync).data;
-        var item = data[key] || (data[key] = {});
+        var item = self.getBucket(time, self.sync).items(key);
         item[attr] = results[i];
       }
       self.emit('sync');
@@ -107,8 +108,11 @@ export class DataStore {
     var bucket = this.getBucket(time, hash, true);
     if (!bucket) return null;
 
-    var item = bucket.data[key];
-    if (item && (attr in item)) return item[attr];
+    var items = bucket.items;
+    if (items.containsKey(key)) {
+      var item = bucket.items(key);
+      return item[attr];
+    } 
     return null;
   }
 
@@ -132,6 +136,22 @@ export class DataStore {
     return ret;
   }
 
+  /*
+   * TODO
+   */
+  function log(log) {
+    var bucket = this.getBucket(time || this.now(), this.history);
+    if (bucket.logCount > this.logLimit) {
+     
+    } else {
+       bucket.logs.push(log);
+    }
+
+    bucket.logCount++;
+    return ret;
+
+  }
+
   function getBucket(time, container, noCreate) {
     var floor  = this.getFloor(time);
     var bucket = container[floor];
@@ -147,7 +167,7 @@ export class DataStore {
   }
 
   function createBucket(floor) {
-    return { data: {}, time: floor, expireAt: floor + this.totalTime };
+    return { items: nested({ of: {} }), time: floor, expireAt: floor + this.totalTime, logs: [], logCount: 0 };
   }
 
   function getFloor(time) {
