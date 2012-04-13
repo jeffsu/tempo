@@ -1,4 +1,6 @@
 var nested = require('nested');
+var RedisSyncer = require('./redis-syncer');
+
 export class DataStore {
   include $m.EventEmitter;
 
@@ -9,8 +11,21 @@ export class DataStore {
 
     this.totalTime = this.per * this.nBuckets;
 
-    this.sync    = {};
-    this.history = {};
+    this.syncHistory = {};
+    this.history     = {};
+
+    if (config.sync) {
+      this.redis  = config.sync.redis;
+      this.prefix = config.sync.prefix;
+      if (config.sync.interval) this.sync(config.sync.interval);
+    }
+  }
+
+  function stop() {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+      this.intervalId = null;
+    }
   }
 
   function increment(key, attr, n) {
@@ -23,7 +38,7 @@ export class DataStore {
     time = this.getFloor(time || this.now());
 
     var hVal = this.getValFromHash(this.history, time, key, attr);
-    var sVal = this.getValFromHash(this.sync, time, key, attr);
+    var sVal = this.getValFromHash(this.syncHistory, time, key, attr);
 
     if (sVal === null && hVal === null) {
       return null;
@@ -35,7 +50,7 @@ export class DataStore {
   function flushHistory() {
     for (var time in this.history) {
       var hItems = this.history[time].items;
-      var sItems = this.getBucket(time, this.sync).items;
+      var sItems = this.getBucket(time, this.syncHistory).items;
 
       for (var key in hItems.data) {
         var hItem = hItems(key);
@@ -49,46 +64,23 @@ export class DataStore {
     }
   }
 
-  function redisSync(redis, prefix) {
-    var commands  = [];
-    var expires   = [];
-    var redisKeys = [];
-
-    prefix = prefix ? prefix + ':' : '';
-
-    for (var time in this.history) {
-      var items = this.history[time].items;
-      for (var key in items.data) {
-        var item = items(key);
-        for (var attr in item) {
-          var val = item[attr];
-          var redisKey = prefix + key + ':' + time;
-          redisKeys.push([ time, key, attr ]);
-          commands.push([ 'HINCRBY', redisKey, attr, val ]);
-          expires.push([ 'EXPIREAT', redisKey, time + this.totalTime ]);
-        }
-      }
+  function syncer() {
+    if (this._syncer) {
+      return this._syncer;
+    } else {
+      this._syncer = new RedisSyncer(this.prefix, this.redis, this);
+      this._syncer.on('sync', #{ self.emit('sync') });
+      return this._syncer;
     }
+  }
 
-    foreach (var exp in expires) {
-      commands.push(exp);
+  function sync(interval) {
+    var syncer = this.syncer();
+    if (interval) {
+      this.intervalId = setInterval(#{ syncer.sync() }, interval);
+    } else {
+      syncer.sync();
     }
-
-    var multi = redis.multi(commands);
-    multi.exec(#(err, results) {
-      if (err) return;
-      foreach (var rkey:i in redisKeys) {
-        var time = rkey[0];
-        var key  = rkey[1];
-        var attr = rkey[2];
-
-        var item = self.getBucket(time, self.sync).items(key);
-        item[attr] = results[i];
-      }
-      self.emit('sync');
-    });
-
-    this.flushHistory();
   }
 
   function getTotal(key, attr) {
