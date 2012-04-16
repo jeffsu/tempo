@@ -1,5 +1,8 @@
 require('mochiscript');
 
+console.log('Sparse Logger');
+require('./sparse-logger');
+
 console.log('Testing data-store');
 require('./data-store');
 
