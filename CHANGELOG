@@ -1,7 +1,10 @@
+### 0.0.3
+
+  * adding sparse logger
+
 ### 0.0.2
 
   * using "nested" datastructures
-  * adding sparse logger
   
 ### 0.0.1
 
