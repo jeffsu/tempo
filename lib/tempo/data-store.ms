@@ -13,12 +13,6 @@ export class DataStore {
 
     this.syncHistory = {};
     this.history     = {};
-
-    if (config.sync) {
-      this.redis  = config.sync.redis;
-      this.prefix = config.sync.prefix;
-      if (config.sync.interval) this.sync(config.sync.interval);
-    }
   }
 
   function stop() {
@@ -64,23 +58,10 @@ export class DataStore {
     }
   }
 
-  function syncer() {
-    if (this._syncer) {
-      return this._syncer;
-    } else {
-      this._syncer = new RedisSyncer(this.prefix, this.redis, this);
-      this._syncer.on('sync', #{ self.emit('sync') });
-      return this._syncer;
-    }
-  }
-
-  function sync(interval) {
-    var syncer = this.syncer();
-    if (interval) {
-      this.intervalId = setInterval(#{ syncer.sync() }, interval);
-    } else {
-      syncer.sync();
-    }
+  function sync(prefix, redis, interval) {
+    var syncer = new RedisSyncer(prefix, redis, this);
+    syncer.sync();
+    return setInterval(#{ syncer.sync() }, interval);
   }
 
   function getTotal(key, attr) {
