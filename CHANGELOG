@@ -1,3 +1,9 @@
+### 0.0.5
+
+  * cleaning up logger
+  * adding documentation
+  * cleaning up syncing
+
 ### 0.0.3
 
   * adding sparse logger
