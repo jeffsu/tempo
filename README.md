@@ -56,7 +56,7 @@ Example for keeping data up to an hour of history:
 
 ```
 var tempo = require('tempo');
-var ds = tempo.DataStore({ per: 60000, buckets: 60 });
+var ds = new tempo.DataStore({ per: 60000, buckets: 60 });
 ```
 
 ### datastore.increment(key, attr, n);
