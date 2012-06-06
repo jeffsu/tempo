@@ -18,17 +18,21 @@ export class SparseLogger {
     this.logs = [];
   }
 
-  function log(msg) {
-    var idx = this.count % this.limit;
-
+  function shouldLog() {
+    var idx  = this.count % this.limit;
     var trim = this.count - idx;
     if (trim > 0) {
       var ratio = 1 / (trim / this.limit);
-      if (ratio >= Math.random()) this.logs[idx] = msg;
-    } else {
-      this.logs[idx] = msg;
-    }
+      return (ratio >= Math.random());
+    } 
 
+    return true;
+  }
+
+  function log(msg, force) {
+    var idx = this.count % this.limit;
+
+    if (force || this.shouldLog()) this.logs[idx] = msg;
     this.count++;
   }
 
