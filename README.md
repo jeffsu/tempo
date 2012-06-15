@@ -14,7 +14,7 @@ For a quick example, please look at examples/simple-use-case.js
 
 Lets say you are running a website and want to know in realtime where people are visiting.
 
-{{{
+```
 
   var tempo = require('tempo').min();
 
@@ -37,7 +37,7 @@ Lets say you are running a website and want to know in realtime where people are
     console.log(tempo.getTotal('website', 'requests') + ' request(s) made in the last minute'); 
   }
 
-}}}
+```
 
 # DataStore
 
@@ -54,10 +54,10 @@ data in memory.
 
 Example for keeping data up to an hour of history:
 
-{{{
+```
 var tempo = require('tempo');
-var ds = tempo.DataStore({ per: 60000, buckets: 60 });
-}}}
+var ds = new tempo.DataStore({ per: 60000, buckets: 60 });
+```
 
 ### datastore.increment(key, attr, n);
 
@@ -66,10 +66,10 @@ var ds = tempo.DataStore({ per: 60000, buckets: 60 });
   1. n (optional, defaults to 1): a number to increment by.
 
 Keeping track of how many times a user has logged in in the past hour:
-{{{
+```
   var ds = require('tempo').hour();
   ds.increment(userId, 'logged-in', 1);
-}}}
+```
 
 ### datastore.getHistory(key, attr1, attr2, ...)
 
@@ -78,17 +78,17 @@ Keeping track of how many times a user has logged in in the past hour:
 
 Grabbing logged in counts:
 
-{{{
+```
   var history = ds.getHistory(userId, 'logged-in');
-}}}
+```
 
 Returns an array of arrays:
 
-{{{
+```
   [ [ <timestampOfBucket>, <loggedInCount> ],
     [ <timestampOfBucket>, <loggedInCount> ],
     [ <timestampOfBucket>, <loggedInCount> ] ]
-}}}
+```
 
 ### datastore.sync(prefix, redis, interval)
 
@@ -100,7 +100,7 @@ also work in conjunction with multiple servers so they will all sync up
 together.
 
 Sync to redis every 10 seconds.
-{{{
+```
   var id = datastore.sync('web-stats', redis, 10000);
   // to stop: stopInterval(id);
-}}}
+```

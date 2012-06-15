@@ -1,6 +1,10 @@
-### 0.0.6
+### 0.0.7
 
   * adding access to keys and attrs
+ 
+### 0.0.6
+
+  * adding force ability to sparse logger
   
 ### 0.0.5
 
