@@ -15,6 +15,7 @@ export class DataStore {
     this.history     = {};
   }
 
+
   function stop() {
     if (this.intervalId) {
       clearInterval(this.intervalId);
@@ -40,6 +41,57 @@ export class DataStore {
       return (sVal || 0) + (hVal || 0);
     }
   }
+
+  // O(n)
+  function getAttrs(key, time) {
+    var times = time ? [ this.getFloor(time) ] : this.getTimes();
+    var all = {};
+    foreach (var t:i in times) {
+      var history = this.history[t];
+      if (history)  {
+        var item = history.items.data[key];
+        if (item)
+          for (var attr in item) all[attr] = true;
+      }
+
+      var syncHistory = this.syncHistory[t];
+      if (syncHistory) {
+        var item = syncHistory.items.data[key];
+        for (var attr in item) all[attr] = true;
+      }
+    }
+
+    var ret = [];
+    for (var k in all) ret.push(k);
+    return ret;
+  }
+
+  // O(n)
+  function getKeys(time) {
+    var times = time ? [ this.getFloor(time) ] : this.getTimes();
+    var all = {};
+    foreach (var t:i in times) {
+      var history = this.history[t];
+      if (history) 
+        for (var key in history.items.data) all[key] = true;
+
+      var syncHistory = this.syncHistory[t];
+      if (syncHistory) 
+        for (var key in syncHistory.items.data) all[key] = true;
+    }
+
+    var ret = [];
+    for (var k in all) ret.push(k);
+    return ret;
+  }
+
+  function getTimes() {
+    var ret = [];
+    var floor = this.getFloor();
+    for (var i=this.nBuckets-1; i>=0; i--) ret.push(floor - (i * this.per));
+    return ret;
+  }
+
 
   function flushHistory() {
     for (var time in this.history) {

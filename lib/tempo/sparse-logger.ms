@@ -31,5 +31,4 @@ export class SparseLogger {
 
     this.count++;
   }
-
 }
