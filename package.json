@@ -3,14 +3,14 @@
   "description": "Rotating Counters for Nodejs",
   "keywords": [ "javascript", "language", "mochiscript", "counter", "stats" ],
   "author": "Jeff Su",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "licenses": [ { "type": "MIT" }],
   "engines": { "node": ">=0.4.0" },
   "directories": { "lib": "./lib/tempo" },
   "main" : "./lib/tempo/index",
   "bin": {},
   "dependencies": { 
-    "mochiscript": ">=0.5.1",
+    "mochiscript": ">=0.6.3",
     "nested":      "0.0.1-pre2"
   },
   "repository": {
