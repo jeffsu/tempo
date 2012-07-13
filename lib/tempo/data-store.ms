@@ -8,6 +8,7 @@ export class DataStore {
     this.per      = config.per;
     this.nBuckets = config.buckets;
     this.logCount = config.logs || (this.per / 1000);
+    this.pushOnly = config.pushOnly || false;
 
     this.totalTime = this.per * this.nBuckets;
 
@@ -93,6 +94,7 @@ export class DataStore {
   }
 
 
+  // merges history into syncHistory
   function flushHistory() {
     for (var time in this.history) {
       var hItems = this.history[time].items;
@@ -119,10 +121,10 @@ export class DataStore {
   function getTotal(key, attr) {
     var total = 0;
     var floor = this.getFloor();
+    var times = this.getTimes();
 
-    for (var i=0; i<this.nBuckets; i++) {
-      var time = floor - (i * this.per);
-      var val  = this.getVal(key, attr, time);
+    foreach (var time in times) {
+      var val = this.getVal(key, attr, time);
       if (val !== undefined) total += val;
     }
 
@@ -147,8 +149,8 @@ export class DataStore {
     var floor = this.getFloor();
     var ret = [];
 
-    for (var i=this.nBuckets-1; i>=0; i--) {
-      var time = floor - (i * this.per);
+    var times = this.getTimes();
+    foreach (var time in times) {
       var row  = [ time ];
 
       for (var j=1; j<arguments.length; j++) {

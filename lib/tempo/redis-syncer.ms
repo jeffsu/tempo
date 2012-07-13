@@ -46,6 +46,8 @@ export class RedisSyncer {
     var multi = this.redis.multi(commands);
     multi.exec(#(err, results) {
       if (err) return;
+      if (ds.pushOnly) return;
+
       foreach (var rkey:i in redisKeys) {
         var time = rkey[0];
         var key  = rkey[1];
@@ -54,6 +56,8 @@ export class RedisSyncer {
         var item = ds.getBucket(time, ds.syncHistory).items(key);
         item[attr] = results[i];
       }
+
+      ds.emit('sync');
       self.emit('sync');
     });
 
