@@ -46,9 +46,10 @@ data in memory.
 
 ### var datastore = new tempo.DataStore(options)
 
-  1. options:
+  1. options hash
     1. per: milliseconds per bucket
     1. buckets: number of buckets
+    1. timeout (optional): ttl pass expiration time
 
 Example for keeping data up to an hour of history:
 

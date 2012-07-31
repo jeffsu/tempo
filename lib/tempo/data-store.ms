@@ -7,6 +7,7 @@ export class DataStore {
     this.per       = options.per;
     this.nBuckets  = options.buckets; 
     this.totalTime = this.nBuckets * this.per;
+    this.timeout   = options.timeout || (this.per * 2);
     this.buckets = [];
   }
 
@@ -62,7 +63,7 @@ export class DataStore {
     self.emit('sync-start');
     var threshold = this.getFloor();
     var multi = [];
-    var timeout = this.per * 2;
+    var timeout = this.timeout;
     for (var i in this.buckets) {
       var bucket = this.buckets[i];
       bucket.sync(namespace, multi);
