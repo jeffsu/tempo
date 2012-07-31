@@ -10,6 +10,7 @@ For a quick example, please look at examples/simple-use-case.js
   1. syncing with redis for aggregation on multiple servers
   1. sparse logging: keep a defined number of random entries in a log
 
+
 # Use Case
 
 Lets say you are running a website and want to know in realtime where people are visiting.
@@ -20,23 +21,20 @@ Lets say you are running a website and want to know in realtime where people are
 
   app.use(function (req, res, next) {
     // the '1' is unnecessary because increment defaults to '1'
-    tempo.increment('website', 'requests', 1); 
+    tempo.inc('requests', 1); 
     next();
   })
 
   function showRequestsOverTime() {
-    var history = tempo.getHistory('website', 'requests');
+    var history = tempo.getHistory('requests');
+    var times   = tempo.getTimes();
 
-    var total = 0;
     for (var i=0; i<history.length; i++) {
-      var bucket = history[i];
-      var time = bucket[0];
-      var n    = bucket[1];
+      console.log("Requsts at " + (new Date(times[i])).toString() + ': ' + history[i]); 
     }
 
-    console.log(tempo.getTotal('website', 'requests') + ' request(s) made in the last minute'); 
+    console.log(tempo.getCount('requests') + ' request(s) made in the last minute'); 
   }
-
 ```
 
 # DataStore
@@ -59,48 +57,36 @@ var tempo = require('tempo');
 var ds = new tempo.DataStore({ per: 60000, buckets: 60 });
 ```
 
-### datastore.increment(key, attr, n);
+### datastore.increment(key, n);
 
-  1. key: an entity id
-  1. attr: an attribute of the entity
+  1. key: entity name
   1. n (optional, defaults to 1): a number to increment by.
 
 Keeping track of how many times a user has logged in in the past hour:
 ```
   var ds = require('tempo').hour();
-  ds.increment(userId, 'logged-in', 1);
+  ds.increment(userId);
 ```
 
 ### datastore.getHistory(key, attr1, attr2, ...)
 
-   1. key: entity id
-   1. attrName: attribute names
+   1. key: entity name
 
 Grabbing logged in counts:
 
 ```
-  var history = ds.getHistory(userId, 'logged-in');
+  var history = ds.getHistory(userId);
 ```
 
-Returns an array of arrays:
+Returns an array of counts (per bucket)
+
+
+### datastore.sync(redis, namespace)
+
+  1. redis client  
+  1. prefix/namespace for the key to store in redis
+    * tempo's keys will look something like "<namespace>:<timestamp>"
 
 ```
-  [ [ <timestampOfBucket>, <loggedInCount> ],
-    [ <timestampOfBucket>, <loggedInCount> ],
-    [ <timestampOfBucket>, <loggedInCount> ] ]
-```
-
-### datastore.sync(prefix, redis, interval)
-
-Returns intervalId
-
-This allows you to setup the datastore to save data to redis.  Just like
-the datastore, redis will expire data passed the history limit.  This will
-also work in conjunction with multiple servers so they will all sync up
-together.
-
-Sync to redis every 10 seconds.
-```
-  var id = datastore.sync('web-stats', redis, 10000);
-  // to stop: stopInterval(id);
+  datastore.sync(redis, 'web-stats');
 ```

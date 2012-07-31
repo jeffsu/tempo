@@ -1,17 +1,15 @@
 var tempo = require('../lib/tempo');
+var redis = require('redis').createClient();
 var assert = require('assert');
 
 var PER = 100;
 var N   = 5;
+var namespace = 'test-' + Math.floor(Math.random() * 100000)
+console.log('using namespace: ' + namespace);
 
 var ds = new tempo.DataStore({ per: PER, buckets: N });
-ds.increment('test', 'count', 5);
-assert.equal(5, ds.getVal('test', 'count'));
-var firstTime = tempo.now();
-
-setTimeout(#{
-  ds.increment('test', 'count');
-  assert.equal(1, ds.getVal('test', 'count', tempo.now()));
-  assert.equal(5, ds.getVal('test', 'count', firstTime));
-  assert.equal(6, ds.getTotal('test', 'count'));
-}, PER);
+ds.increment('count', 5);
+assert.equal(5, ds.getCount('count'));
+ds.increment('count');
+assert.equal(6, ds.getCount('count'));
+ds.sync(redis, namespace);

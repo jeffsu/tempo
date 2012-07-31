@@ -1,209 +1,193 @@
-var nested = require('nested');
-var RedisSyncer = require('./redis-syncer');
+var SparseLogger = require('./sparse-logger');
 
 export class DataStore {
   include $m.EventEmitter;
 
-  function initialize(config) {
-    this.per      = config.per;
-    this.nBuckets = config.buckets;
-    this.logCount = config.logs || (this.per / 1000);
-    this.pushOnly = config.pushOnly || false;
-
-    this.totalTime = this.per * this.nBuckets;
-
-    this.syncHistory = {};
-    this.history     = {};
+  function initialize(options) {
+    this.per       = options.per;
+    this.nBuckets  = options.buckets; 
+    this.totalTime = this.nBuckets * this.per;
+    this.buckets = [];
   }
 
-
-  function stop() {
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
-      this.intervalId = null;
-    }
+  function increment(key, n) {
+    return this.inc(key, n);
   }
 
-  function increment(key, attr, n) {
-    var item = this.getBucket(this.now(), this.history).items(key);
-    var ret = item[attr] = (item[attr] || 0) + (n === undefined ? 1 : n);
-    return ret;
+  function inc(key, n) {
+    this.cleanup();
+    var bucket = this.getCurrentBucket();
+    return bucket.inc(key, n);
   }
 
-  function getVal(key, attr, time) {
-    time = this.getFloor(time || this.now());
-
-    var hVal = this.getValFromHash(this.history, time, key, attr);
-    var sVal = this.getValFromHash(this.syncHistory, time, key, attr);
-
-    if (sVal === null && hVal === null) {
-      return null;
+  function getCount(key, time) {
+    this.cleanup();
+    if (time) {
+      time = this.getFloor(time);
+      foreach (var b in this.buckets) {
+        if (time == b.time) return b.get(key);
+      }
     } else {
-      return (sVal || 0) + (hVal || 0);
+      var n = 0;
+      for (var i in this.buckets) n += this.buckets[i].get(key);
     }
+    return n;
   }
 
-  // O(n)
-  function getAttrs(key, time) {
-    var times = time ? [ this.getFloor(time) ] : this.getTimes();
-    var all = {};
-    foreach (var t:i in times) {
-      var history = this.history[t];
-      if (history)  {
-        var item = history.items.data[key];
-        if (item)
-          for (var attr in item) all[attr] = true;
-      }
-
-      var syncHistory = this.syncHistory[t];
-      if (syncHistory) {
-        var item = syncHistory.items.data[key];
-        for (var attr in item) all[attr] = true;
-      }
-    }
-
-    var ret = [];
-    for (var k in all) ret.push(k);
-    return ret;
-  }
-
-  // O(n)
-  function getKeys(time) {
-    var times = time ? [ this.getFloor(time) ] : this.getTimes();
-    var all = {};
-    foreach (var t:i in times) {
-      var history = this.history[t];
-      if (history) 
-        for (var key in history.items.data) all[key] = true;
-
-      var syncHistory = this.syncHistory[t];
-      if (syncHistory) 
-        for (var key in syncHistory.items.data) all[key] = true;
-    }
-
-    var ret = [];
-    for (var k in all) ret.push(k);
-    return ret;
+  function getExpireTime() {
+    return (new Date).getTime() - this.totalTime;
   }
 
   function getTimes() {
-    var ret = [];
     var floor = this.getFloor();
-    for (var i=this.nBuckets-1; i>=0; i--) ret.push(floor - (i * this.per));
+    var ret   = [];
+    for (var i=0; i<this.nBuckets; i++) {
+      ret.push(floor);
+      floor -= this.per;
+    }
     return ret;
   }
 
+  function getHistory(key) {
+    var times = this.getTimes();
+    var history = [];
+    foreach (var time in times) {
+      var bucket = this.getBucket(time);
+      if (!bucket) history.push(0);
+      else history.push(bucket.get(key));
+    }
+  }
 
-  // merges history into syncHistory
-  function flushHistory() {
-    for (var time in this.history) {
-      var hItems = this.history[time].items;
-      var sItems = this.getBucket(time, this.syncHistory).items;
+  function sync(redis, namespace) {
+    self.emit('sync-start');
+    var threshold = this.getFloor();
+    var multi = [];
+    var timeout = this.per * 2;
+    for (var i in this.buckets) {
+      var bucket = this.buckets[i];
+      bucket.sync(namespace, multi);
+      multi.push([ 'PEXPIREAT', bucket.getMainKey(namespace), bucket.time + timeout ]);
+    }
 
-      for (var key in hItems.data) {
-        var hItem = hItems(key);
-        var sItem = sItems(key);
+    redis.multi(multi).exec(#(err, replies) {
+      if (err) return self.emit('sync-push-error', err);
+      self.emit('sync-push');
+      self.syncPull(redis, namespace);
+    });
+  }
 
-        for (var attr in hItem) {
-          sItem[attr] = (sItem[attr] || 0) + hItem[attr];
-          hItem[attr] = 0;
+  function syncPull(redis, namespace) {
+    var times = self.getTimes();
+    var multi = times.map(#{ => [ 'HGETALL', namespace + ':' + $1 ] });
+    redis.multi(multi).exec(#(err, replies) {
+      foreach (var r:i in replies) {
+        if (r) {
+          var bucket = self.getBucket(times[i], true);
+          for (var k in r) bucket.syncSet(k, parseInt(r[k]));
         }
       }
+    });
+  }
+
+  function getKeys() {
+    this.cleanup();
+
+    var already = {};
+    var ret     = [];
+    for (var i in this.buckets) {
+      this.buckets[i].populateKeys(ret, already);
+    }
+    return ret;
+  }
+
+  function getCurrentBucket() {
+    var floor  = this.getFloor();
+    var bucket = this.buckets[this.buckets.length-1];
+
+    if (!bucket || bucket.time != floor) {
+      var b = new Bucket(floor);
+      this.buckets.push(b);
+      return b;
+    } else {
+      return bucket;
     }
   }
 
-  function sync(prefix, redis, interval) {
-    var syncer = new RedisSyncer(prefix, redis, this);
-    syncer.sync();
-    return setInterval(#{ syncer.sync() }, interval);
-  }
-
-  function getTotal(key, attr) {
-    var total = 0;
-    var floor = this.getFloor();
-    var times = this.getTimes();
-
-    foreach (var time in times) {
-      var val = this.getVal(key, attr, time);
-      if (val !== undefined) total += val;
+  function getBucket(time, autoVivify) {
+    foreach (var bucket:i in this.buckets) {
+      if (bucket.time == time) return bucket;
+      if (autoVivify && bucket.time > time) {
+        var b = new Bucket(time);
+        this.buckets.splice(i, 1, b);
+        return b;
+      }
     }
 
-    return total;
-  }
-
-  function getValFromHash(hash, time, key, attr) {
-    var bucket = this.getBucket(time, hash, true);
-    if (!bucket) return null;
-
-    var items = bucket.items;
-    if (items.containsKey(key)) {
-      var item = bucket.items(key);
-      return item[attr];
-    } 
     return null;
   }
 
-  // <key>, <attr1>, <attr2>, ...
-  function getHistory() {
-    var key   = arguments[0];
-    var floor = this.getFloor();
-    var ret = [];
-
-    var times = this.getTimes();
-    foreach (var time in times) {
-      var row  = [ time ];
-
-      for (var j=1; j<arguments.length; j++) {
-        var attr = arguments[j];
-        row.push(this.getVal(key, attr, time));
-      }
-      ret.push(row);
+  function cleanup() {
+    var first;
+    var expireTime = this.getExpireTime();
+    while (1) {
+      var bucket = this.buckets[0];
+      if (!bucket) return;
+      if (bucket.time < expireTime) this.buckets.shift();
+      else return;
     }
-
-    return ret;
-  }
-
-  /*
-   * TODO
-   */
-  function log(log) {
-    var bucket = this.getBucket(time || this.now(), this.history);
-    if (bucket.logCount > this.logLimit) {
-     
-    } else {
-       bucket.logs.push(log);
-    }
-
-    bucket.logCount++;
-    return ret;
-
-  }
-
-  function getBucket(time, container, noCreate) {
-    var floor  = this.getFloor(time);
-    var bucket = container[floor];
-    if (noCreate || bucket) return bucket;
-
-    // out of bounds
-    var now = this.now();
-    if (floor > now || floor < (now - this.totalTime)) return null;
-
-    bucket = container[floor] = this.createBucket(floor);
-    setTimeout(#{ delete container[floor] }, this.expireAt - now);
-    return bucket;
-  }
-
-  function createBucket(floor) {
-    return { items: nested({ of: {} }), time: floor, expireAt: floor + this.totalTime, logs: [], logCount: 0 };
   }
 
   function getFloor(time) {
-    time = time || this.now();
+    time = time || (new Date).getTime();
     return time - (time % this.per);
   }
+}
 
-  function now() {
-    return (new Date()).getTime();
+class Bucket {
+  function initialize(time) {
+    this.time = time;
+
+    this.data = {};
+    this.syncData = {};
   }
 
+  function inc(key, n) {
+    return this.data[key] = (this.data[key] || 0) + (n || 1);
+  }
+
+  function get(key) {
+    return (this.syncData[key] || 0) + (this.data[key] || 0);
+  }
+
+  function populateKeys(ret, already) {
+    for (var k in this.data) {
+      if (k in already) continue;
+      already[k] = true;
+      ret.push(k);
+    }
+
+    for (var k in this.syncData) {
+      if (k in already) continue;
+      already[k] = true;
+      ret.push(k);
+    }
+  }
+
+  function sync(namespace, multi) {
+    var mainKey = this.getMainKey(namespace);
+    for (var k in this.data) {
+      multi.push([ 'HINCRBY', mainKey, k, this.data[k] ]);
+      this.syncData[k] = (this.syncData[k] || 0) + this.data[k];
+    }
+    this.data = {};
+  }
+
+  function syncSet(key, val) {
+    this.syncData[key] = val;
+  }
+
+  function getMainKey(namespace) {
+    return namespace + ':' + this.time;
+  }
 }
+

@@ -5,33 +5,30 @@ var assert = require('assert');
 var client = redis.createClient();
 
 var config = { per: 2000, buckets: 5 };
+var namespace = 'test-' + Math.floor(Math.random() * 100000)
 
 var ds1 = new tempo.DataStore(config);
-ds1.increment('foo', 'bar');
-var now = ds1.now();
+ds1.increment('foo');
 
 var ds2 = new tempo.DataStore(config);
-ds2.increment('foo', 'bar');
+ds2.increment('foo');
 
 var ds3 = new tempo.DataStore(config);
-ds3.pushOnly = true;
-ds3.increment('foo', 'bar');
+ds3.increment('foo');
 
 // sanity
-assert.equal(1, ds2.getVal('foo', 'bar'));
-assert.equal(1, ds2.getVal('foo', 'bar'));
-assert.equal(1, ds3.getVal('foo', 'bar'));
+assert.equal(1, ds1.getCount('foo'));
+assert.equal(1, ds2.getCount('foo'));
+assert.equal(1, ds3.getCount('foo'));
 
 // Sync test
-ds1.sync('data', client, 100);
-ds2.sync('data', client, 100);
-ds3.sync('data', client, 100);
+ds1.sync(client, namespace);
+ds2.sync(client, namespace);
+ds3.sync(client, namespace);
 
 setTimeout(#{
   console.log('running sync tests');
-  assert.equal(3, ds1.getTotal('foo', 'bar'));
-  assert.equal(3, ds2.getTotal('foo', 'bar'));
-  assert.equal(3, ds2.getVal('foo', 'bar', now));
-
-  assert.equal(1, ds3.getTotal('foo', 'bar'));
+  assert.equal(3, ds1.getCount('foo'));
+  assert.equal(3, ds2.getCount('foo'));
+  assert.equal(3, ds3.getCount('foo'));
 }, 500);
