@@ -32,3 +32,4 @@ setTimeout(#{
   assert.equal(3, ds2.getCount('foo'));
   assert.equal(3, ds3.getCount('foo'));
 }, 500);
+
