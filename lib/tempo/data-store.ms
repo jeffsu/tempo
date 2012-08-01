@@ -124,7 +124,13 @@ export class DataStore {
       }
     }
 
-    return null;
+    if (autoVivify) {
+      var b = new Bucket(time);
+      this.buckets.push(b);
+      return b;
+    } else {
+      return null;
+    }
   }
 
   function cleanup() {
