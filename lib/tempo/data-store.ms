@@ -1,4 +1,5 @@
 var SparseLogger = require('./sparse-logger');
+var Counter      = require('./counter');
 
 export class DataStore {
   include $m.EventEmitter;
@@ -9,6 +10,7 @@ export class DataStore {
     this.totalTime = this.nBuckets * this.per;
     this.timeout   = options.timeout || (this.per * 2);
     this.buckets = [];
+    this.cache   = {};
   }
 
   function increment(key, n) {
@@ -18,6 +20,7 @@ export class DataStore {
   function inc(key, n) {
     this.cleanup();
     var bucket = this.getCurrentBucket();
+    this.cache[key] = (this.cache[key] || 0) + (n || 1);
     return bucket.inc(key, n);
   }
 
@@ -57,6 +60,15 @@ export class DataStore {
       if (!bucket) history.push(0);
       else history.push(bucket.get(key));
     }
+  }
+
+  function sync(redis, namespace, cb) {
+    var _cb = #(err) { if (cb) return cb(err); };
+
+    this.pushData(redis, namespace, #{ 
+      if (err) return _cb(err);
+      self.pullData(redis, namespace, _cb);
+    });
   }
 
   function sync(redis, namespace) {
@@ -106,7 +118,7 @@ export class DataStore {
     var bucket = this.buckets[this.buckets.length-1];
 
     if (!bucket || bucket.time != floor) {
-      var b = new Bucket(floor);
+      var b = this.newBucket(floor);
       this.buckets.push(b);
       return b;
     } else {
@@ -114,18 +126,24 @@ export class DataStore {
     }
   }
 
+  function newBucket(time) {
+    var b = new Counter();
+    b.time = time;
+    return b;
+  }
+
   function getBucket(time, autoVivify) {
     foreach (var bucket:i in this.buckets) {
       if (bucket.time == time) return bucket;
       if (autoVivify && bucket.time > time) {
-        var b = new Bucket(time);
+        var b = this.newBucket(time);
         this.buckets.splice(i, 1, b);
         return b;
       }
     }
 
     if (autoVivify) {
-      var b = new Bucket(time);
+      var b = this.newBucket(time);
       this.buckets.push(b);
       return b;
     } else {
@@ -139,62 +157,29 @@ export class DataStore {
     while (1) {
       var bucket = this.buckets[0];
       if (!bucket) return;
-      if (bucket.time < expireTime) this.buckets.shift();
+      if (bucket.time < expireTime) this.shiftBucket();
       else return;
+    }
+  }
+
+  function shiftBucket() {
+    var bucket = this.buckets.shift();
+    if (!bucket) return;
+
+    var data  = bucket.getData(),
+        cache = this.cache;
+
+    for (var k in data) {
+      var cacheVal = cache[k];
+      if (cacheVal === undefined) console.warn('we hae a sync problem');
+      else cache[k] -= data[k];
+      if (cache[k] <= 0) delete cache[k];
     }
   }
 
   function getFloor(time) {
     time = time || (new Date).getTime();
     return time - (time % this.per);
-  }
-}
-
-class Bucket {
-  function initialize(time) {
-    this.time = time;
-
-    this.data = {};
-    this.syncData = {};
-  }
-
-  function inc(key, n) {
-    return this.data[key] = (this.data[key] || 0) + (n || 1);
-  }
-
-  function get(key) {
-    return (this.syncData[key] || 0) + (this.data[key] || 0);
-  }
-
-  function populateKeys(ret, already) {
-    for (var k in this.data) {
-      if (k in already) continue;
-      already[k] = true;
-      ret.push(k);
-    }
-
-    for (var k in this.syncData) {
-      if (k in already) continue;
-      already[k] = true;
-      ret.push(k);
-    }
-  }
-
-  function sync(namespace, multi) {
-    var mainKey = this.getMainKey(namespace);
-    for (var k in this.data) {
-      multi.push([ 'HINCRBY', mainKey, k, this.data[k] ]);
-      this.syncData[k] = (this.syncData[k] || 0) + this.data[k];
-    }
-    this.data = {};
-  }
-
-  function syncSet(key, val) {
-    this.syncData[key] = val;
-  }
-
-  function getMainKey(namespace) {
-    return namespace + ':' + this.time;
   }
 }
 
