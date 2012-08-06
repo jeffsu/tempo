@@ -7,27 +7,27 @@ export class Counter {
   function inc(key, n) {
     var data = this._data;
     data[key] = (data[key] || 0) + (n || 1);
-    if (!(k in this._sync)) this._sync[k] = 0;
+    if (!(key in this._sync)) this._sync[key] = 0;
   }
 
   function sync(redis, namespace, cb) {
     this.pushData(redis, namespace, #(err) {
-      if (err) return cb(err);
-      self.pullData(redis, namespace);
+      if (err && cb) return cb(err);
+      self.pullData(redis, namespace, cb);
     });
   }
 
   function pushData(redis, namespace, cb) {
-    var multi = redis.multi();
+    var multi = [];
     this.setupRedisMulti(multi, namespace);
-    multi.exec(#(err) { cb(err); });
+    redis.multi(multi).exec(#(err) { if (cb) cb(err); });
   }
 
   function pullData(redis, namespace, cb) {
     redis.hgetall(namespace, #(err, hash) {
       if (err) return cb(err);
-      for (var k in hash) this.replaceSync(k, parseInt(hash[k]));
-      cb(null);
+      for (var k in hash) self.replaceSync(k, parseInt(hash[k]));
+      if (cb) cb(null);
     });
   }
 
@@ -36,8 +36,8 @@ export class Counter {
     var keys = [];
 
     for (var k in data) {
-      this._sync[k] = this.get(key);
-      multi.hincrby(redisKey, k, data);
+      this._sync[k] = this.get(k);
+      multi.push([ 'HINCRBY', redisKey, k, data[k] ]);
     }
 
     this._data = {};
@@ -50,7 +50,7 @@ export class Counter {
 
   function replaceSync(key, val) {
     var old = this._sync[key] || 0;
-    this._sync[key] = old + val;
+    this._sync[key] = val;
     return val - old;
   }
 

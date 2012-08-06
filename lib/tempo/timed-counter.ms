@@ -31,11 +31,12 @@ export class DataStore {
       foreach (var b in this.buckets) {
         if (time == b.time) return b.get(key);
       }
-    } else {
-      var n = 0;
-      for (var i in this.buckets) n += this.buckets[i].get(key);
+      return 0;
+    } 
+    
+    else {
+      return this.cache[key] || 0;
     }
-    return n;
   }
 
   function getExpireTime() {
@@ -49,6 +50,14 @@ export class DataStore {
       ret.push(floor);
       floor -= this.per;
     }
+
+    return ret;
+  }
+
+  function getKeys() {
+    this.cleanup();
+    var ret = [];
+    for (var k in this.cache) ret.push(k);
     return ret;
   }
 
@@ -60,57 +69,53 @@ export class DataStore {
       if (!bucket) history.push(0);
       else history.push(bucket.get(key));
     }
+    return history;
   }
 
   function sync(redis, namespace, cb) {
     var _cb = #(err) { if (cb) return cb(err); };
-
-    this.pushData(redis, namespace, #{ 
+    this.pushData(redis, namespace, #(err) {
       if (err) return _cb(err);
       self.pullData(redis, namespace, _cb);
     });
   }
 
-  function sync(redis, namespace) {
-    self.emit('sync-start');
-    var threshold = this.getFloor();
+  function pullData(redis, namespace, cb) {
+    var times = this.getTimes();
     var multi = [];
-    var timeout = this.timeout;
-    for (var i in this.buckets) {
-      var bucket = this.buckets[i];
-      bucket.sync(namespace, multi);
-      multi.push([ 'PEXPIREAT', bucket.getMainKey(namespace), bucket.time + timeout ]);
+    var cache = this.cache;
+
+    foreach (var time in times) {
+      multi.push([ 'hgetall', namespace + ':' + time ]);
     }
 
     redis.multi(multi).exec(#(err, replies) {
-      if (err) return self.emit('sync-push-error', err);
-      self.emit('sync-push');
-      self.syncPull(redis, namespace);
-    });
-  }
-
-  function syncPull(redis, namespace) {
-    var times = self.getTimes();
-    var multi = times.map(#{ => [ 'HGETALL', namespace + ':' + $1 ] });
-    redis.multi(multi).exec(#(err, replies) {
-      foreach (var r:i in replies) {
-        if (r) {
-          var bucket = self.getBucket(times[i], true);
-          for (var k in r) bucket.syncSet(k, parseInt(r[k]));
+      foreach (var time:i in times) {
+        var hash = replies[i];
+        if (hash) {
+          var b = self.getBucket(time, true);
+          for (var k in hash) {
+            var delta = b.replaceSync(k, parseInt(hash[k]));
+            cache[k] = (cache[k] || 0) + delta;
+            if (cache[k] <= 0) delete cache[k];
+          }
         }
       }
     });
   }
 
-  function getKeys() {
-    this.cleanup();
+  function pushData(redis, namespace, cb) {
+    var multi = [];
+    var threshold = this.getFloor();
+    var timeout   = this.timeout;
 
-    var already = {};
-    var ret     = [];
-    for (var i in this.buckets) {
-      this.buckets[i].populateKeys(ret, already);
+    foreach (var b:i in this.buckets) {
+      var key = namespace + ':' + b.time;
+      b.setupRedisMulti(multi, key);
+      multi.push([ 'PEXPIREAT', key, b.time + timeout ]);
     }
-    return ret;
+
+    redis.multi(multi).exec(#(err) { cb(err); });
   }
 
   function getCurrentBucket() {
@@ -171,7 +176,7 @@ export class DataStore {
 
     for (var k in data) {
       var cacheVal = cache[k];
-      if (cacheVal === undefined) console.warn('we hae a sync problem');
+      if (cacheVal === undefined) console.warn('we have a sync problem');
       else cache[k] -= data[k];
       if (cache[k] <= 0) delete cache[k];
     }

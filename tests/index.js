@@ -3,10 +3,13 @@ require('mochiscript');
 console.log('Sparse Logger');
 require('./sparse-logger');
 
-console.log('Testing data-store');
-require('./data-store');
+console.log('Testing timed-counter');
+require('./timed-counter');
 
 console.log('Testing sync');
 require('./sync');
 
-setTimeout(function () { console.log("Passed!"); process.exit(0); }, 3000);
+console.log('Testing counter');
+require('./counter');
+
+setTimeout(function () { console.log("Passed!"); process.exit(); }, 3000);

@@ -6,7 +6,8 @@ For a quick example, please look at examples/simple-use-case.js
 
 # Features
 
-  1. preset counters for: min, hour, day, week
+  1. simple counters that sync over redis using a hash structure
+  1. counters that keep track of historical data in buckets
   1. syncing with redis for aggregation on multiple servers
   1. sparse logging: keep a defined number of random entries in a log
 
@@ -17,11 +18,23 @@ Lets say you are running a website and want to know in realtime where people are
 
 ```
 
-  var tempo = require('tempo').min();
+  var redis = require('redis').createClient();
+  var tempo = require('tempo');
+
+  // create counter, increment and sync
+  var counter = new tempo.Counter();
+  counter.inc('hello');
+  counter.inc('hello', 5);
+  counter.sync(redis, 'my-counter', function (err) { if (!err) console.log('synced') });
+
+
+  // create middleware to track counts
+  // create time counter, increment and sync
+  var min = tempo.min();
 
   app.use(function (req, res, next) {
     // the '1' is unnecessary because increment defaults to '1'
-    tempo.inc('requests', 1); 
+    min.inc('requests', 1); 
     next();
   })
 
@@ -35,16 +48,17 @@ Lets say you are running a website and want to know in realtime where people are
 
     console.log(tempo.getCount('requests') + ' request(s) made in the last minute'); 
   }
+
 ```
 
-# DataStore
+# TimedCounter
 
-The tempo DataStore class allows you to create a datastore object and keep
+The tempo TimedCounter class allows you to create a datastore object and keep
 data in memory.
 
 ## Instance methods
 
-### var datastore = new tempo.DataStore(options)
+### var timedCounter = new tempo.TimedCounter(options)
 
   1. options hash
     1. per: milliseconds per bucket
@@ -55,10 +69,10 @@ Example for keeping data up to an hour of history:
 
 ```
 var tempo = require('tempo');
-var ds = new tempo.DataStore({ per: 60000, buckets: 60 });
+var ds = new tempo.TimedCounter({ per: 60000, buckets: 60 });
 ```
 
-### datastore.increment(key, n);
+### timedCounter.incr(key, n);
 
   1. key: entity name
   1. n (optional, defaults to 1): a number to increment by.
@@ -69,7 +83,7 @@ Keeping track of how many times a user has logged in in the past hour:
   ds.increment(userId);
 ```
 
-### datastore.getHistory(key, attr1, attr2, ...)
+### timedCounter.getHistory(key, attr1, attr2, ...)
 
    1. key: entity name
 
@@ -82,12 +96,12 @@ Grabbing logged in counts:
 Returns an array of counts (per bucket)
 
 
-### datastore.sync(redis, namespace)
+### timedCounter.sync(redis, namespace)
 
   1. redis client  
   1. prefix/namespace for the key to store in redis
     * tempo's keys will look something like "<namespace>:<timestamp>"
 
 ```
-  datastore.sync(redis, 'web-stats');
+  timedCounter.sync(redis, 'web-stats');
 ```
