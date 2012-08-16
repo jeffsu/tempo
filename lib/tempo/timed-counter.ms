@@ -115,7 +115,10 @@ export class DataStore {
       multi.push([ 'PEXPIREAT', key, b.time + timeout ]);
     }
 
-    redis.multi(multi).exec(#(err) { cb(err); });
+    if (multi.length) 
+      redis.multi(multi).exec(#(err) { cb(err); });
+    else 
+      cb(null);
   }
 
   function getCurrentBucket() {
