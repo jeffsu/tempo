@@ -1,7 +1,7 @@
 var SparseLogger = require('./sparse-logger');
 var Counter      = require('./counter');
 
-export class DataStore {
+export class TimedCounter {
   include $m.EventEmitter;
 
   function initialize(options) {
