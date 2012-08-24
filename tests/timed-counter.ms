@@ -21,4 +21,7 @@ tc2.sync(redis, namespace, #(err) { assert.ok(!err); });
 
 setTimeout(#{ 
   assert.equal(tc.getCount('count'), tc2.getCount('count')) 
+  tc.increment('foo-count', 10);
+  tc.increment('bar-count', 20);
+  assert.ok(tc.getAverageHistory('foo-count', 'bar-count')[0] == 0.5);
 }, 2000);

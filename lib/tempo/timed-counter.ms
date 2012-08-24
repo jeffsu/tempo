@@ -61,6 +61,24 @@ export class TimedCounter {
     return ret;
   }
 
+  function getAverageHistory(numKey, denKey) {
+    var times = this.getTimes();
+    var ret = [];
+
+    var numerators   = this.getHistory(numKey);
+    var denominators = this.getHistory(denKey);
+
+    foreach (var num:i in numerators) {
+      var den = denominators[i];
+      if (den && num) 
+        ret.push(num / den);
+      else 
+        ret.push(null);
+    }
+
+    return ret;
+  }
+
   function getHistory(key) {
     var times = this.getTimes();
     var history = [];
