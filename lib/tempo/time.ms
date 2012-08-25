@@ -7,5 +7,5 @@ module.exports = {
   DAY:  DAY,
   HOUR: HOUR,
   MIN:  MIN,
-  TEST: SEC
+  SEC:  SEC
 };
