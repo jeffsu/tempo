@@ -119,6 +119,8 @@ export class TimedCounter {
           }
         }
       }
+
+      if (cb) cb();
     });
   }
 
@@ -130,7 +132,7 @@ export class TimedCounter {
     foreach (var b:i in this.buckets) {
       var key = namespace + ':' + b.time;
       b.setupRedisMulti(multi, key);
-      multi.push([ 'PEXPIREAT', key, b.time + timeout ]);
+      multi.push([ 'PEXPIREAT', key, b.time + this.totalTime + timeout ]);
     }
 
     if (multi.length) 
@@ -159,18 +161,23 @@ export class TimedCounter {
   }
 
   function getBucket(time, autoVivify) {
+    var beforeIdx = -1;
     foreach (var bucket:i in this.buckets) {
       if (bucket.time == time) return bucket;
-      if (autoVivify && bucket.time > time) {
-        var b = this.newBucket(time);
-        this.buckets.splice(i, 1, b);
-        return b;
+      if (bucket.time > time) {
+        if (autoVivify) {
+          beforeIdx = i - 1;
+          break;
+        } else {
+          return null
+        }
       }
     }
 
     if (autoVivify) {
       var b = this.newBucket(time);
-      this.buckets.push(b);
+      if (beforeIdx <= 0) this.buckets.unshift(b);
+      else this.buckets.splice(beforeIdx, 1, b);
       return b;
     } else {
       return null;
