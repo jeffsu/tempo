@@ -22,8 +22,6 @@ assert.equal(1, tc2.getCount('foo'));
 assert.equal(1, tc3.getCount('foo'));
 
 setTimeout(#{ 
-  console.log('inc 1');
-  tc1.inc('foo'); 
   tc1.sync(client, namespace);
   tc2.sync(client, namespace);
 }, 500);
@@ -44,8 +42,8 @@ setTimeout(#{
   console.log('running second sync tests');
   var history = tc2.getHistory('foo');
   assert.equal(history.length, 5);
-  assert.deepEqual(history.filter(#{ => $1 > 0 }), [ 1, 3 ]);
-  assert.equal(4, tc1.getCount('foo'));
-  assert.equal(4, tc2.getCount('foo'));
-}, 700);
+  assert.deepEqual(history.filter(#{ => $1 > 0 }), [ 3 ]);
+  assert.equal(3, tc1.getCount('foo'));
+  assert.equal(3, tc2.getCount('foo'));
+}, 800);
 
