@@ -89,6 +89,31 @@ export class TimedCounter {
     }
     return history;
   }
+   
+  static function sync(redis, hashOfTempos, cb) {
+    self.pushData(redis, hashOfTempos, #(err) {
+      if (err) return cb(err);
+      self.pullData(redis, hashOfTempos, cb);
+    });
+  }
+
+  static function pullData(redis, hashOfTempos, cb) {
+    var multi    = [];
+    var handlers = [];
+
+    for (var k in hashOfTempos) 
+      handlers.push(hashOfTempos.multiPullData(multi, k));
+
+    redis.multi(multi).exec(#(err, replies) {
+      //foreach (var h:i in handlers) h(replies);
+    });
+  }
+
+  static function pushData(redis, hashOfTempos, cb) {
+    var multi = [];
+    for (var k in hashOfTempos) hashOfTempos.multiPushData(multi, k);
+    redis.multi(multi).exec(#(err) { cb(err) });
+  }
 
   function sync(redis, namespace, cb) {
     var _cb = #(err) { if (cb) return cb(err); };
@@ -98,34 +123,7 @@ export class TimedCounter {
     });
   }
 
-  function pullData(redis, namespace, cb) {
-    var times = this.getTimes();
-    var multi = [];
-    var cache = this.cache;
-
-    foreach (var time in times) {
-      multi.push([ 'hgetall', namespace + ':' + time ]);
-    }
-
-    redis.multi(multi).exec(#(err, replies) {
-      foreach (var time:i in times) {
-        var hash = replies[i];
-        if (hash) {
-          var b = self.getBucket(time, true);
-          for (var k in hash) {
-            var delta = b.replaceSync(k, parseInt(hash[k]));
-            cache[k] = (cache[k] || 0) + delta;
-            if (cache[k] <= 0) delete cache[k];
-          }
-        }
-      }
-
-      if (cb) cb();
-    });
-  }
-
-  function pushData(redis, namespace, cb) {
-    var multi = [];
+  function multiPushData(namespace, multi) {
     var threshold = this.getFloor();
     var timeout   = this.timeout;
 
@@ -135,10 +133,53 @@ export class TimedCounter {
       multi.push([ 'PEXPIREAT', key, b.time + this.totalTime + timeout ]);
     }
 
+    return multi;
+  }
+
+  function multiPullData(namespace, multi) {
+    var times    = this.getTimes();
+    var startIdx = 0;
+    var cache    = this.cache;
+
+    foreach (var time in times) {
+      multi.push([ 'hgetall', namespace + ':' + time ]);
+    }
+
+    return #(replies) {
+      foreach (var time:i in times) {
+        var hash = replies[i+startIdx];
+        if (hash) {
+          var b = self.getBucket(time, true);
+          for (var k in hash) {
+            var delta = b.replaceSync(k, parseInt(hash[k]));
+            cache[k] = (cache[k] || 0) + delta;
+            if (cache[k] <= 0) delete cache[k];
+          }
+        }
+      }
+    };
+  }
+
+  function pullData(redis, namespace, cb) {
+    var multi = [];
+    var handler = this.multiPullData(namespace, multi);
+    if (multi.length) {
+      redis.multi(multi).exec(#(err, replies) {
+        if (cb && err) return cb(err);
+        handler(replies);
+        if (cb) cb(err);
+      });
+    } else {
+      if (cb) cb(null);
+    }
+  }
+
+  function pushData(redis, namespace, cb) {
+    var multi = [];
+    this.multiPushData(namespace, multi);
     if (multi.length) 
       redis.multi(multi).exec(#(err) { cb(err); });
-    else 
-      cb(null);
+    else cb(null);
   }
 
   function getCurrentBucket() {
