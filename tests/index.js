@@ -9,6 +9,10 @@ require('./timed-counter');
 console.log('Testing sync');
 require('./sync');
 
+console.log('Testing static-sync');
+require('./static-sync');
+
+
 console.log('Testing counter');
 require('./counter');
 

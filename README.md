@@ -21,13 +21,6 @@ Lets say you are running a website and want to know in realtime where people are
   var redis = require('redis').createClient();
   var tempo = require('tempo');
 
-  // create counter, increment and sync
-  var counter = new tempo.Counter();
-  counter.inc('hello');
-  counter.inc('hello', 5);
-  counter.sync(redis, 'my-counter', function (err) { if (!err) console.log('synced') });
-
-
   // create middleware to track counts
   // create time counter, increment and sync
   var min = tempo.min();
@@ -103,5 +96,5 @@ Returns an array of counts (per bucket)
     * tempo's keys will look something like "<namespace>:<timestamp>"
 
 ```
-  timedCounter.sync(redis, 'web-stats');
+  timedCounter.sync(redis, 'web-stats', callback);
 ```

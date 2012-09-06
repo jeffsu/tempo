@@ -102,7 +102,7 @@ export class TimedCounter {
     var handlers = [];
 
     for (var k in hashOfTempos) 
-      handlers.push(hashOfTempos.multiPullData(multi, k));
+      handlers.push(hashOfTempos[k].multiPullData(k, multi));
 
     redis.multi(multi).exec(#(err, replies) {
       //foreach (var h:i in handlers) h(replies);
@@ -111,7 +111,7 @@ export class TimedCounter {
 
   static function pushData(redis, hashOfTempos, cb) {
     var multi = [];
-    for (var k in hashOfTempos) hashOfTempos.multiPushData(multi, k);
+    for (var k in hashOfTempos) hashOfTempos[k].multiPushData(k, multi);
     redis.multi(multi).exec(#(err) { cb(err) });
   }
 
