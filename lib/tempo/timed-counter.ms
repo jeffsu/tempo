@@ -11,6 +11,8 @@ export class TimedCounter {
     this.timeout   = options.timeout || (this.per * 2);
     this.buckets = [];
     this.cache   = {};
+
+    this.intervalId = setInterval(#{ self.cleanup() }, this.per);
   }
 
   function increment(key, n) {
@@ -18,14 +20,12 @@ export class TimedCounter {
   }
 
   function inc(key, n) {
-    this.cleanup();
     var bucket = this.getCurrentBucket();
     this.cache[key] = (this.cache[key] || 0) + (n || 1);
     return bucket.inc(key, n);
   }
 
   function getCount(key, time) {
-    this.cleanup();
     if (time) {
       time = this.getFloor(time);
       foreach (var b in this.buckets) {
@@ -55,7 +55,6 @@ export class TimedCounter {
   }
 
   function getKeys() {
-    this.cleanup();
     var ret = [];
     for (var k in this.cache) ret.push(k);
     return ret;
@@ -105,7 +104,7 @@ export class TimedCounter {
       handlers.push(hashOfTempos[k].multiPullData(k, multi));
 
     redis.multi(multi).exec(#(err, replies) {
-      //foreach (var h:i in handlers) h(replies);
+      foreach (var h:i in handlers) h(replies);
     });
   }
 
@@ -230,9 +229,9 @@ export class TimedCounter {
     var expireTime = this.getExpireTime();
     while (1) {
       var bucket = this.buckets[0];
-      if (!bucket) return;
-      if (bucket.time < expireTime) this.shiftBucket();
-      else return;
+
+      if (!bucket || bucket.time > expireTime) return;
+      else this.shiftBucket();
     }
   }
 
