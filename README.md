@@ -65,7 +65,7 @@ var tempo = require('tempo');
 var ds = new tempo.TimedCounter({ per: 60000, buckets: 60 });
 ```
 
-### timedCounter.incr(key, n);
+### timedCounter.inc(key, n);
 
   1. key: entity name
   1. n (optional, defaults to 1): a number to increment by.
