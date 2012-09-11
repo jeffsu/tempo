@@ -217,7 +217,7 @@ export class TimedCounter {
     if (autoVivify) {
       var b = this.newBucket(time);
       if (beforeIdx <= 0) this.buckets.unshift(b);
-      else this.buckets.splice(beforeIdx, 1, b);
+      else this.buckets.splice(beforeIdx, 0, b);
       return b;
     } else {
       return null;

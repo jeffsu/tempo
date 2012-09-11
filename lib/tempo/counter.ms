@@ -46,6 +46,7 @@ export class Counter {
   function getData() {
     var ret = {};
     for (var k in this._sync) ret[k] = this.get(k);
+    return ret;
   }
 
   function replaceSync(key, val) {
