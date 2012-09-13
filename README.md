@@ -9,7 +9,7 @@ For a quick example, please look at examples/simple-use-case.js
   1. simple counters that sync over redis using a hash structure
   1. counters that keep track of historical data in buckets
   1. syncing with redis for aggregation on multiple servers
-  1. sparse logging: keep a defined number of random entries in a log
+  1. throttling
 
 
 # Use Case
@@ -28,8 +28,13 @@ Lets say you are running a website and want to know in realtime where people are
   app.use(function (req, res, next) {
     // the '1' is unnecessary because increment defaults to '1'
     min.inc('requests', 1); 
+    if (min.getCount('requests') > 1000) return next('throttled');
     next();
   })
+
+  function showTotalRequestsInPassMin() {
+    min.getKeys().forEach(function (k) { console.log(k, min.getCount(k)) });
+  }
 
   function showRequestsOverTime() {
     var history = tempo.getHistory('requests');
@@ -76,7 +81,7 @@ Keeping track of how many times a user has logged in in the past hour:
   ds.increment(userId);
 ```
 
-### timedCounter.getHistory(key, attr1, attr2, ...)
+### timedCounter.getHistory(key)
 
    1. key: entity name
 
