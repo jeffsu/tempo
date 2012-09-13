@@ -61,7 +61,7 @@ data in memory.
   1. options hash
     1. per: milliseconds per bucket
     1. buckets: number of buckets
-    1. timeout (optional): ttl pass expiration time
+    1. timeout (optional): Time to live. Mainly for redis syncing. Defaults to (per*bucket)+per*2
 
 Example for keeping data up to an hour of history:
 
