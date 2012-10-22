@@ -1,4 +1,3 @@
-var Syncer = require('./syncer');
 export class Counter {
   private {
     var NOW = #{ => (new Date).getTime() };
@@ -131,6 +130,7 @@ export class Counter {
   }
 
   function getSyncer(redis) {
+    var Syncer = require('./syncer');
     this.syncer = this.syncer || new Syncer(redis);
     this.syncer.addCounter(this);
     return this.syncer;
