@@ -70,7 +70,7 @@ var tempo = require('tempo');
 var ds = new tempo.TimedCounter({ per: 60000, buckets: 60 });
 ```
 
-### counter.inc(key, [n]);
+### counter.inc(key, [n]); O(1)
 
   1. key: entity name
   1. n (optional, defaults to 1): a number to increment by.
@@ -81,7 +81,7 @@ Keeping track of how many times a user has logged in in the past hour:
   ds.inc(userId);
 ```
 
-### counter.getHistory(key)
+### counter.getHistory(key); O(n)
 
    1. key: entity name
 
@@ -94,15 +94,21 @@ Grabbing logged in counts:
 Returns an array of counts (per bucket)
 
 
-### counter.sync([callback])
+### counter.sync([callback]) O(nb)
 
   1. redis client  
   1. prefix/namespace for the key to store in redis
     * tempo's keys will look something like "<namespace>:<timestamp>"
+  1. O(nt) where n is the number of keys and b is the number of buckets
 
 ```javascript
   counter.sync(redis, 'web-stats', callback);
 ```
+
+### counter.getKeys(); O(nb)
+
+returns and array of all the keys in the counter
+O(nt) where n is the number of keys and b is the number of buckets
 
 # Syncer
 
