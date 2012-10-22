@@ -16,7 +16,7 @@ For a quick example, please look at examples/simple-use-case.js
 
 Lets say you are running a website and want to know in realtime where people are visiting.
 
-```
+```javascript
 
   var redis = require('redis').createClient();
   var tempo = require('tempo');
@@ -44,14 +44,14 @@ Lets say you are running a website and want to know in realtime where people are
 
 ```
 
-# TimedCounter
+# Counter
 
 The tempo TimedCounter class allows you to create a datastore object and keep
 data in memory.
 
 ## Instance methods
 
-### var timedCounter = new tempo.TimedCounter(options)
+### var counter = new tempo.Counter(options)
 
   1. options hash
     1. per: milliseconds per bucket
@@ -60,41 +60,78 @@ data in memory.
 
 Example for keeping data up to an hour of history:
 
-```
+```javascript
 var tempo = require('tempo');
 var ds = new tempo.TimedCounter({ per: 60000, buckets: 60 });
 ```
 
-### timedCounter.inc(key, n);
+### counter.inc(key, [n]);
 
   1. key: entity name
   1. n (optional, defaults to 1): a number to increment by.
 
 Keeping track of how many times a user has logged in in the past hour:
-```
+```javascript
   var ds = require('tempo').hour();
-  ds.increment(userId);
+  ds.inc(userId);
 ```
 
-### timedCounter.getHistory(key, attr1, attr2, ...)
+### counter.getHistory(key)
 
    1. key: entity name
 
 Grabbing logged in counts:
 
-```
+```javascript
   var history = ds.getHistory(userId);
 ```
 
 Returns an array of counts (per bucket)
 
 
-### timedCounter.sync(redis, namespace)
+### counter.sync([callback])
 
   1. redis client  
   1. prefix/namespace for the key to store in redis
     * tempo's keys will look something like "<namespace>:<timestamp>"
 
+```javascript
+  counter.sync(redis, 'web-stats', callback);
 ```
-  timedCounter.sync(redis, 'web-stats', callback);
+
+# Syncer
+
+```javascript
+var tempo = require('tempo');
+var syncer = new tempo.Syncer(redisClient);
+```
+
+## Instance methods
+
+### syncer.addCounter(counter);
+
+Adds a counter to the list of counters to sync at once
+
+### var counter = syncer.counter(options)
+
+Shortcut to instantiate counter and add it
+
+### syncer.sync([ callback ])
+
+Syncs all counters to redis (push and pull)
+
+### syner.push([ callback ])
+
+Pushes data  to redis
+
+### syncer.pull([ callback ])
+
+Pulls data from redis
+
+### syncer.start(type, interval)
+
+Starts running a type of sync at given intervals between syncs
+
+```javascript
+syncer.start('push', 3000) // push to redis every 3 seconds
 ```

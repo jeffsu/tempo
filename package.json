@@ -9,6 +9,10 @@
   "directories": { "lib": "./lib/tempo" },
   "main" : "./lib/tempo/index",
   "bin": {},
+  "scripts": {
+    "test": "whiskey 'tests/increment.js tests/syncer.js tests/functional.js'"
+  },
+
   "dependencies": { 
     "mochiscript": ">=0.6.13"
   },
