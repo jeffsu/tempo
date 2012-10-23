@@ -79,6 +79,27 @@ export class Counter {
     return this.toTable().toString();
   }
 
+  function eachCount(k, cb) {
+    if (arguments.length > 2) {
+      var cb = arguments[arguments.length-1];
+      var keys = [];
+      for (var i=0; i<(arguments.length-1); i++) keys.push(arguments[i]);
+
+      this.forEach(#(b, s, time) {
+        var vals = [];
+        foreach (var k in keys) vals.push((b[k] || 0) + (s[k] || 0))
+        vals.push(time);
+        cb.apply(self, vals);
+      });
+    } 
+    
+    else {
+      this.forEach(#(b, s, time) {
+        cb((b[k] || 0) + (s[k] || 0), time)
+      });
+    }
+  }
+
   function forEach(cb) {
     var floor = this.floor;
     for (var i=0; i<this.nbuckets; i++) {

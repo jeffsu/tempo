@@ -32,17 +32,14 @@ Lets say you are running a website and want to know in realtime where people are
     next();
   })
 
-  function showTotalRequestsInPassMin() {
+  function showTotalRequestsInPastMin() {
     min.getKeys().forEach(function (k) { console.log(k, min.getCount(k)) });
   }
 
   function showRequestsOverTime() {
-    var history = tempo.getHistory('requests');
-    var times   = tempo.getTimes();
-
-    for (var i=0; i<history.length; i++) {
-      console.log("Requsts at " + (new Date(times[i])).toString() + ': ' + history[i]); 
-    }
+    min.eachCount('requests', function (count, time) {
+      console.log("Requsts at " + (new Date(time)).toString() + ': ' + count); 
+    });
 
     console.log(tempo.getCount('requests') + ' request(s) made in the last minute'); 
   }
@@ -109,6 +106,17 @@ Returns an array of counts (per bucket)
 
 returns and array of all the keys in the counter
 O(nt) where n is the number of keys and b is the number of buckets
+
+### counter.eachCount(key1, key2, ... [ callback ])
+
+Runs a callback against every bucket in the counter with arguments (see examples below):
+
+```
+counter.eachCount('key1', 'key2', function (keyCount1, keyCount2, time) {
+  console.log('key1', keyCount1, ' at ' + (new Date(time)).toString());
+  console.log('key2', keyCount2, ' at ' + (new Date(time)).toString());
+});
+
 
 # Syncer
 
