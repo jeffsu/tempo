@@ -3,7 +3,10 @@
   "description": "Rotating Counters for Nodejs",
   "keywords": [ "javascript", "language", "mochiscript", "counter", "stats" ],
   "author": "Jeff Su",
-  "version": "0.1.0",
+  "version": "0.2.0",
+  "scripts": {
+     
+  },
   "licenses": [ { "type": "MIT" }],
   "engines": { "node": ">=0.4.0" },
   "directories": { "lib": "./lib/tempo" },
@@ -12,6 +15,11 @@
   "dependencies": { 
     "mochiscript": ">=0.6.14"
   },
+
+  "devDependencies": {
+    "cli-table": ">=0.0.2"
+  },
+
   "repository": {
     "type": "git",
     "url": "git://github.com/jeffsu/tempo.git"

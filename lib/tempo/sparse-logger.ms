@@ -15,7 +15,7 @@ export class SparseLogger {
 
   function empty() {
     this.count = 0;
-    this.logs = [];
+    this.logs.length = 0;
   }
 
   function shouldLog() {
