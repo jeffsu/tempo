@@ -1,7 +1,4 @@
 export class Counter {
-  private {
-    var NOW = #{ => (new Date).getTime() };
-  }
 
   function initialize(options) {
     this.nbuckets = options.buckets;
@@ -18,7 +15,7 @@ export class Counter {
     this._buckets = [];
     this._syncs   = [];
 
-    this.floor     = this.getFloor(NOW());
+    this.floor     = this.getFloor(Date.now());
     this.nextFloor = this.floor + this.per;
 
     for (var i=0; i<this.nbuckets; i++) {
@@ -110,7 +107,7 @@ export class Counter {
   }
 
   function tick(now) {
-    now = now || NOW();
+    now = now || Date.now();
     var per = this.per;
 
     if (now < this.nextFloor) return;
@@ -179,7 +176,7 @@ export class Counter {
   }
 
   function getFloor(time) {
-    time = time || NOW();
+    time = time || Date.now();
     return time - (time % this.per);
   }
 
