@@ -5,7 +5,8 @@ var time = require('./lib/time');
 var ex = module.exports = {
   Counter: require('./lib/counter'),
   TimedCounter: require('./lib/counter'),
-  Syncer: require('./lib/syncer')
+  Syncer: require('./lib/syncer'),
+  SparseLogger: require('./lib/sparse-logger')
 };
 
 ex.MIN  = { per: time.SEC * 5,  buckets: 12 };

@@ -20,9 +20,6 @@ exports['test offset'] = function (test) {
   }, 300);
 
   setTimeout(#{
-    counter1.tick();
-    counter2.tick();
-
     test.equal(counter1.getCount('hello'), 1);
     test.equal(counter2.getCount('hello'), 1);
   }, 400);

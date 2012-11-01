@@ -1,3 +1,7 @@
+### 0.2.3
+
+  * adding in sparse-logger
+
 ### 0.2.2
 
   * faster sync with 1 request (not 2)
