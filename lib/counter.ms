@@ -161,15 +161,15 @@ export class Counter {
   }
 
   function sync(redis, cb) {
-    this.getSyncer().sync(cb);
+    this.getSyncer(redis).sync(cb);
   }
 
-  function push(cb) {
-    this.getSyncer().push(cb);
+  function push(redis, cb) {
+    this.getSyncer(redis).push(cb);
   }
 
-  function pull(cb) {
-    this.getSyncer().pull(cb);
+  function pull(redis, cb) {
+    this.getSyncer(redis).pull(cb);
   }
 
   function inc(key, n) {
