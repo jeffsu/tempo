@@ -1,6 +1,6 @@
 var tempo = require('../');
 var redis = require('redis').createClient();
-module.exports['test sync'] = function (test, assert) {
+module.exports['test sync'] = function (test) {
   var syncer   = new tempo.Syncer(redis);
   var options  = { per: 100, buckets: 5, namespace: 'foo' + (new Date).getTime() };
 
@@ -21,9 +21,9 @@ module.exports['test sync'] = function (test, assert) {
   });
 
   later(function () {
-    assert.equal(counter1.getCount('foo'), 2);
+    test.equal(counter1.getCount('foo'), 2);
     redis.end();
-    test.finish();
+    test.done();
   });
 
 };

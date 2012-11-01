@@ -26,17 +26,20 @@ export class Syncer {
     var multi    = [];
     var handlers = [];
 
-    foreach (var c in this.counters)
-      this.pushMulti(c, multi);
+    this.push(#(err) { 
+      if (err) {
+        if (cb) cb(err);
+        return;
+      }
 
-    foreach (var c in this.counters)
-      this.pullMulti(c, multi, handlers);
-
-    this.redis.multi(multi).exec(#(err, results) {
-      if (!err) 
-        foreach (var h in handlers) h(results);
-      if (cb) cb(err);
+      self.pull(cb) 
     });
+  }
+
+  function push(cb) {
+    var multi = [];
+    foreach (var c in this.counters) this.pushMulti(c, multi);
+    this.redis.multi(multi).exec(#(err) { if (cb) cb(err); });
   }
 
   function pull(cb) {
@@ -54,6 +57,7 @@ export class Syncer {
   }
 
   function pushMulti(counter, multi) {
+    counter.tick();
     var floor = counter.floor;
     counter.forEach(#(bucket, sync, time, id, i) {
       for (var k in bucket) {
@@ -61,16 +65,19 @@ export class Syncer {
         var key = counter.prefix + time;
         multi.push([ 'HINCRBY', key, k, bucket[k] ]);
         multi.push([ 'PEXPIREAT', key, time + counter.expireTime ]);
+
+        bucket[k] = 0;
       }
     });
   }
 
   function pullMulti(counter, multi, handlers) {
+    counter.tick();
     var startIdx = multi.length;
     var floor    = counter.floor;
 
     counter.forEach(#(bucket, sync, time) {
-      var key = counter.prefix + ':' + time;
+      var key = counter.prefix + time;
       multi.push([ 'HGETALL', key ]);
     });
 
@@ -79,26 +86,14 @@ export class Syncer {
       counter.forEach(#(bucket, sync, time) {
         if (time == floor) {
           var hash = results[cursor];
-          for (var k in hash) sync[k] = hash[k];
+          if (hash) 
+            for (var k in hash) sync[k] = parseFloat(hash[k]);
+
           floor -= counter.per;
         }
 
         cursor++;
       });
-    });
-  }
-
-  function pull(cb) {
-    var multi    = [];
-    var handlers = [];
-
-    foreach (var c in counter) 
-      c.pullMulti(multi, handlers);
-
-    redis.multi(multi).exec(#(err, results) {
-      if (err) return cb(err);
-      foreach (var h in handlers) h(results);
-      cb();
     });
   }
 }

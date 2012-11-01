@@ -1,10 +1,17 @@
 export class Counter {
 
   function initialize(options) {
+    options = options || {};
+
     this.nbuckets = options.buckets;
     this.per      = options.per;
 
-    this.expireTime = (this.nbuckets + 2) * this.per;
+    this.offset       = options.offset || 0;
+    this.expireOffset = options.expireOffset || 4;
+
+    this.offsetTime   = this.offset * this.per;
+
+    this.expireTime = (this.nbuckets + this.expireOffset) * this.per;
 
     this.totalTime = this.nbuckets * this.per;
     this.namespace = options.namespace;
@@ -62,11 +69,11 @@ export class Counter {
 
   function toTable() {
     var Table = require('cli-table');
-    var table = new Table({ head: [ '', 'Bucket', 'Sync' ] });
+    var table = new Table({ head: [ 'Time', 'Bucket', 'Sync' ] });
 
     var ret = "";
     this.forEach(#(b, s, time, idx, i) {
-      table.push([ idx, JSON.stringify(b), JSON.stringify(s) ]);
+      table.push([ time, JSON.stringify(b), JSON.stringify(s) ]);
     });
 
     return table;
@@ -106,13 +113,12 @@ export class Counter {
     }
   }
 
-  function tick(now) {
-    now = now || Date.now();
+  function tick() {
     var per = this.per;
 
-    if (now < this.nextFloor) return;
+    var nowFloor = this.getFloor();
+    if (nowFloor < this.nextFloor) return;
 
-    var nowFloor = this.getFloor(now);
     var deltaIdx = (nowFloor - this.floor) / per;
 
     var min = Math.min(this.nbuckets, deltaIdx);
@@ -167,6 +173,7 @@ export class Counter {
   }
 
   function inc(key, n) {
+    if (this.offset) throw new Error("Can't increment key if offset is used");
     this.tick();
 
     n = typeof n == 'number' ? n : 1;
@@ -177,7 +184,7 @@ export class Counter {
 
   function getFloor(time) {
     time = time || Date.now();
-    return time - (time % this.per);
+    return time - (time % this.per) - this.offsetTime;
   }
 
   function getTimes() {

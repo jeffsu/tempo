@@ -1,27 +1,40 @@
 {
   "name": "tempo",
   "description": "Rotating Counters for Nodejs",
-  "keywords": [ "javascript", "language", "mochiscript", "counter", "stats" ],
+  "keywords": [
+    "javascript",
+    "language",
+    "mochiscript",
+    "counter",
+    "stats"
+  ],
   "author": "Jeff Su",
-  "version": "0.2.0",
-  "licenses": [ { "type": "MIT" }],
-  "engines": { "node": ">=0.4.0" },
-  "directories": { "lib": "./lib/tempo" },
-  "main" : "./index.js",
-  "bin": {},
-
-  "scripts": {
-    "test": "whiskey 'tests/increment.js tests/syncer.js tests/functional.js tests/iterators.js'"
+  "version": "0.2.1",
+  "licenses": [
+    {
+      "type": "MIT"
+    }
+  ],
+  "engines": {
+    "node": ">=0.4.0"
   },
-
-  "dependencies": { 
+  "directories": {
+    "lib": "./lib/tempo"
+  },
+  "main": "./index.js",
+  "bin": {},
+  "scripts": {
+    "test": "node tests"
+  },
+  "dependencies": {
     "mochiscript": ">=0.6.15"
   },
-
   "devDependencies": {
-    "cli-table": ">=0.0.2"
+    "cli-table": ">=0.0.2",
+    "nodeunit": "~0.7.4",
+    "redis": "~0.8.1",
+    "async": "~0.1.22"
   },
-
   "repository": {
     "type": "git",
     "url": "git://github.com/jeffsu/tempo.git"
