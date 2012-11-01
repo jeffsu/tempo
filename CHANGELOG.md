@@ -1,3 +1,7 @@
+### 0.2.4
+
+  * fixing counter.pull(redis, [cb]) and counter.push(redis, [cb])
+
 ### 0.2.3
 
   * adding in sparse-logger
