@@ -1,3 +1,15 @@
+### 0.2.2
+
+  * faster sync with 1 request (not 2)
+
+### 0.2.1
+
+  * adding offset for read-only counters
+  
+### 0.2.0
+
+  * more effecient storage for keys and counters
+
 ### 0.1.0-pre
 
   * complete rewrite of data-store

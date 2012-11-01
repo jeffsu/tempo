@@ -26,13 +26,20 @@ export class Syncer {
     var multi    = [];
     var handlers = [];
 
-    this.push(#(err) { 
+    foreach (var c in this.counters) 
+      this.pushMulti(c, multi);
+
+    foreach (var c in this.counters) 
+      this.pullMulti(c, multi, handlers);
+
+    this.redis.multi(multi).exec(#(err, results) {
       if (err) {
         if (cb) cb(err);
         return;
       }
 
-      self.pull(cb) 
+      foreach (var h in handlers) h(results);
+      if (cb) cb(err);
     });
   }
 
