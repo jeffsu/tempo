@@ -3,13 +3,11 @@ export class Counter {
   function initialize(options) {
     options = options || {};
 
-    this.nbuckets = options.buckets;
+    this.offset   = options.offset || 0;
+    this.nbuckets = options.buckets + this.offset;
     this.per      = options.per;
 
-    this.offset       = options.offset || 0;
     this.expireOffset = options.expireOffset || 4;
-
-    this.offsetTime   = this.offset * this.per;
 
     this.expireTime = (this.nbuckets + this.expireOffset) * this.per;
 
@@ -104,9 +102,18 @@ export class Counter {
     }
   }
 
-  function forEach(cb) {
+  function _forEach(cb) {
     var floor = this.floor;
     for (var i=0; i<this.nbuckets; i++) {
+      var idx = (i + this.idx) % this.nbuckets;
+      cb(this._buckets[idx], this._syncs[idx], floor, idx, i);
+      floor -= this.per;
+    }
+  }
+
+  function forEach(cb) {
+    var floor = this.floor;
+    for (var i=this.offset; i<this.nbuckets; i++) {
       var idx = (i + this.idx) % this.nbuckets;
       cb(this._buckets[idx], this._syncs[idx], floor, idx, i);
       floor -= this.per;
@@ -184,7 +191,7 @@ export class Counter {
 
   function getFloor(time) {
     time = time || Date.now();
-    return time - (time % this.per) - this.offsetTime;
+    return time - (time % this.per);
   }
 
   function getTimes() {

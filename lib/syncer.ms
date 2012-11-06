@@ -66,7 +66,7 @@ export class Syncer {
   function pushMulti(counter, multi) {
     counter.tick();
     var floor = counter.floor;
-    counter.forEach(#(bucket, sync, time, id, i) {
+    counter._forEach(#(bucket, sync, time, id, i) {
       for (var k in bucket) {
         sync[k] = (sync[k] || 0) + bucket[k];
         var key = counter.prefix + time;
@@ -83,14 +83,14 @@ export class Syncer {
     var startIdx = multi.length;
     var floor    = counter.floor;
 
-    counter.forEach(#(bucket, sync, time) {
+    counter._forEach(#(bucket, sync, time) {
       var key = counter.prefix + time;
       multi.push([ 'HGETALL', key ]);
     });
 
     handlers.push(#(results) {
       var cursor = startIdx;
-      counter.forEach(#(bucket, sync, time) {
+      counter._forEach(#(bucket, sync, time) {
         if (time == floor) {
           var hash = results[cursor];
           if (hash) 
