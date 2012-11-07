@@ -6,6 +6,7 @@ export class Counter {
     this.offset   = options.offset || 0;
     this.nbuckets = options.buckets + this.offset;
     this.per      = options.per;
+    this.name     = options.name;
 
     this.expireOffset = options.expireOffset || 4;
 
@@ -93,8 +94,8 @@ export class Counter {
         vals.push(time);
         cb.apply(self, vals);
       });
-    } 
-    
+    }
+
     else {
       this.forEach(#(b, s, time) {
         cb((b[k] || 0) + (s[k] || 0), time)
@@ -149,9 +150,9 @@ export class Counter {
   }
 
   function deprecate(idx) {
-    var bucket = this._buckets[idx], 
+    var bucket = this._buckets[idx],
         sync   = this._syncs[idx];
-     
+
     this._buckets[idx] = Object.create(null);
     this._syncs[idx]   = Object.create(null);
   }
@@ -161,8 +162,10 @@ export class Counter {
   }
 
   function getSyncer(redis) {
-    var Syncer = require('./syncer');
-    this.syncer = this.syncer || new Syncer(redis);
+    if (this.syncer) return this.syncer;
+
+    var Syncer  = require('./syncer');
+    this.syncer = new Syncer(redis);
     this.syncer.addCounter(this);
     return this.syncer;
   }
@@ -212,4 +215,3 @@ export class Counter {
   }
 
 }
-

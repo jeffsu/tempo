@@ -1,8 +1,8 @@
 var tempo = require('../');
 var redis = require('redis').createClient();
 
-var counter1 = new tempo.Counter({ buckets: 5, per: 100, namespace: 'testing' });
-var counter2 = new tempo.Counter({ buckets: 5, per: 100, namespace: 'testing', offset: 1 });
+var counter1 = new tempo.Counter({ name: 'c1', buckets: 5, per: 100, namespace: 'testing' });
+var counter2 = new tempo.Counter({ name: 'c2', buckets: 5, per: 100, namespace: 'testing', offset: 1 });
 
 setInterval(function () { counter1.inc('hello'); }, 5);
 
