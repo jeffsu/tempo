@@ -1,3 +1,7 @@
+### 0.2.5
+ 
+  * Adding start/stop to syncer
+
 ### 0.2.4
 
   * fixing counter.pull(redis, [cb]) and counter.push(redis, [cb])

@@ -16,8 +16,13 @@ export class Syncer {
     return counter;
   }
 
-  function start(type, interval) {
-    var run  = #{ self[type](beat) };
+  function stop() {
+    this.isRunning = false;
+  }
+
+  function start(interval) {
+    this.isRunning = true;
+    var run  = #{ if (self.isRunning) self.sync(beat) };
     var beat = #{ setTimeout(run, interval) };
     run();
   }
