@@ -1,6 +1,14 @@
-### 0.2.5
- 
+### 0.2.7
+
+  * fixed counter get index val issue
+
+### 0.2.6
+
   * Adding start/stop to syncer
+
+### 0.2.5
+
+  * fixed syncer memory leak
 
 ### 0.2.4
 
@@ -17,7 +25,7 @@
 ### 0.2.1
 
   * adding offset for read-only counters
-  
+
 ### 0.2.0
 
   * more effecient storage for keys and counters
@@ -34,11 +42,11 @@
 ### 0.0.7
 
   * adding access to keys and attrs
- 
+
 ### 0.0.6
 
   * adding force ability to sparse logger
-  
+
 ### 0.0.5
 
   * cleaning up logger
@@ -52,7 +60,7 @@
 ### 0.0.2
 
   * using "nested" datastructures
-  
+
 ### 0.0.1
 
   * initial use cases

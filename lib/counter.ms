@@ -210,7 +210,6 @@ export class Counter {
 
   function getIdxVal(key, idx) {
     this.tick();
-    idx = (this.idx + idx) % this.nbuckets;
     return (this._buckets[idx][key] || 0) + (this._syncs[idx][key] || 0)
   }
 
