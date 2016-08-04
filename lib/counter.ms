@@ -121,6 +121,19 @@ export class Counter {
     }
   }
 
+  function recent(n, cb) {
+    if (!(n > 0 && n <= this.nbuckets)) throw new Error("buckets number is invalid");
+
+    var floor = this.floor;
+    for (var i=0; i<this.nbuckets; i++) {
+      var idx = (i + this.idx) % this.nbuckets;
+      cb(this._buckets[idx], this._syncs[idx], floor, idx, i);
+      floor -= this.per;
+      n--;
+      if (n < 1) break;
+    }
+  }
+
   function tick() {
     var per = this.per;
 
@@ -172,6 +185,10 @@ export class Counter {
 
   function sync(redis, cb) {
     this.getSyncer(redis).sync(cb);
+  }
+
+  function quickSync(redis, cb, n) {
+    this.getSyncer(redis).quickSync(cb, n);
   }
 
   function push(redis, cb) {

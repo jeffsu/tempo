@@ -31,11 +31,32 @@ export class Syncer {
     var multi    = [];
     var handlers = [];
 
-    foreach (var c in this.counters) 
+    foreach (var c in this.counters)
       this.pushMulti(c, multi);
 
-    foreach (var c in this.counters) 
+    foreach (var c in this.counters)
       this.pullMulti(c, multi, handlers);
+
+    this.redis.multi(multi).exec(#(err, results) {
+      if (err) {
+        if (cb) cb(err);
+        return;
+      }
+
+      foreach (var h in handlers) h(results);
+      if (cb) cb(err);
+    });
+  }
+
+  function quickSync(cb, n) {
+    var multi    = [];
+    var handlers = [];
+
+    foreach (var c in this.counters)
+      this.pushMulti(c, multi);
+
+    foreach (var c in this.counters)
+      this.quickPullMulti(c, multi, handlers, n);
 
     this.redis.multi(multi).exec(#(err, results) {
       if (err) {
@@ -62,7 +83,7 @@ export class Syncer {
       this.pullMulti(c, multi, handlers);
 
     this.redis.multi(multi).exec(#(err, results) {
-      if (!err) 
+      if (!err)
         foreach (var h in handlers) h(results);
       if (cb) cb(err);
     });
@@ -98,7 +119,33 @@ export class Syncer {
       counter._forEach(#(bucket, sync, time) {
         if (time == floor) {
           var hash = results[cursor];
-          if (hash) 
+          if (hash)
+            for (var k in hash) sync[k] = parseFloat(hash[k]);
+
+          floor -= counter.per;
+        }
+
+        cursor++;
+      });
+    });
+  }
+
+  function quickPullMulti(counter, multi, handlers, n) {
+    counter.tick();
+    var startIdx = multi.length;
+    var floor    = counter.floor;
+
+    counter.recent(n, #(bucket, sync, time) {
+      var key = counter.prefix + time;
+      multi.push([ 'HGETALL', key ]);
+    });
+
+    handlers.push(#(results) {
+      var cursor = startIdx;
+      counter._forEach(#(bucket, sync, time) {
+        if (time == floor) {
+          var hash = results[cursor];
+          if (hash)
             for (var k in hash) sync[k] = parseFloat(hash[k]);
 
           floor -= counter.per;
