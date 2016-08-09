@@ -183,8 +183,13 @@ export class Counter {
     return this.syncer;
   }
 
-  function sync(redis, cb) {
-    this.getSyncer(redis).sync(cb);
+  function sync(redis, cb, opts) {
+    opts = opts || {};
+    if (opts.quick) {
+      this.quickSync(redis, cb, opts);
+    } else {
+      this.getSyncer(redis).sync(cb);
+    }
   }
 
   function quickSync(redis, cb, opts) {
