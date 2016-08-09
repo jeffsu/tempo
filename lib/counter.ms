@@ -187,8 +187,8 @@ export class Counter {
     this.getSyncer(redis).sync(cb);
   }
 
-  function quickSync(redis, cb, n) {
-    this.getSyncer(redis).quickSync(cb, n);
+  function quickSync(redis, cb, opts) {
+    this.getSyncer(redis).quickSync(cb, opts);
   }
 
   function push(redis, cb) {

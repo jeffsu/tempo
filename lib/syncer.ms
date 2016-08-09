@@ -1,4 +1,6 @@
 var Counter = require('./counter');
+DEFAULT_MOST_RECENT = 2;
+
 export class Syncer {
   function initialize(redis) {
     this.redis = redis;
@@ -48,7 +50,10 @@ export class Syncer {
     });
   }
 
-  function quickSync(cb, n) {
+  function quickSync(cb, opts) {
+    opts = opts || {};
+    var mostRecent = opts.mostRecent || DEFAULT_MOST_RECENT;
+
     var multi    = [];
     var handlers = [];
 
@@ -56,7 +61,7 @@ export class Syncer {
       this.pushMulti(c, multi);
 
     foreach (var c in this.counters)
-      this.quickPullMulti(c, multi, handlers, n);
+      this.quickPullMulti(c, multi, handlers, mostRecent);
 
     this.redis.multi(multi).exec(#(err, results) {
       if (err) {
