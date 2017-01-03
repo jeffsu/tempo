@@ -21,19 +21,16 @@ exports['test timed incrementing'] = function (test) {
   test.equal(counter.getIdxVal('hello', 0), 3);
 
   setTimeout(function () { 
-    test.equal(counter.getIdxVal('hello', 0), 0);
-    test.equal(counter.getIdxVal('hello', 1), 3);
+    test.equal(counter.getIdxVal('hello', 0), 3);
+    test.equal(counter.getIdxVal('hello', 1), 0);
+    counter.inc('hello', 2);
   }, 100);
 
   setTimeout(function () { 
-    test.equal(counter.getIdxVal('hello', 1), 0);
-    test.equal(counter.getIdxVal('hello', 2), 3);
-  }, 200);
-
-  setTimeout(function () { 
-    test.equal(counter.getCount('hello'), 3);
-  }, 400);
-
+    test.equal(counter.getIdxVal('hello', 0), 3);
+    test.equal(counter.getIdxVal('hello', 4), 2);
+    test.equal(counter.getCount('hello'), 5);
+  }, 300);
 
   setTimeout(function () { 
     test.equal(counter.getCount('hello'), 0);

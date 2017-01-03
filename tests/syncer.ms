@@ -39,15 +39,14 @@ exports['test pullMulti async'] = function (test) {
   var results  = [ { hello: 10 } ];
 
   syncer.pullMulti(counter, multi, handlers);
+
   setTimeout(function () {
     handlers.forEach(function (h) { h(results) });
-    test.equal(counter.getIdxVal('hello', 0), 0);
-    test.equal(counter.getIdxVal('hello', 1), 11);
+    test.equal(counter.getIdxVal('hello', 0), 11);
   }, 100);
 
   setTimeout(function () {
-    test.equal(counter.getIdxVal('hello', 0), 0);
-    test.equal(counter.getIdxVal('hello', 2), 11);
+    test.equal(counter.getCount('hello'), 11);
     test.done();
-  }, 200);
+  }, 300);
 };

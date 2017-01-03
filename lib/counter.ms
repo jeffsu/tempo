@@ -21,7 +21,7 @@ export class Counter {
     this._buckets = [];
     this._syncs   = [];
 
-    this.floor     = this.getFloor(Date.now());
+    this.floor     = this.getFloor();
     this.nextFloor = this.floor + this.per;
 
     for (var i=0; i<this.nbuckets; i++) {
@@ -185,15 +185,7 @@ export class Counter {
 
   function sync(redis, cb, opts) {
     opts = opts || {};
-    if (opts.quick) {
-      this.quickSync(redis, cb, opts);
-    } else {
-      this.getSyncer(redis).sync(cb);
-    }
-  }
-
-  function quickSync(redis, cb, opts) {
-    this.getSyncer(redis).quickSync(cb, opts);
+    this.getSyncer(redis).sync(cb, opts);
   }
 
   function push(redis, cb) {

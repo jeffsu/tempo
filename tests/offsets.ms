@@ -1,5 +1,6 @@
+var tempo  = require('../');
+
 exports['test offset'] = function (test) {
-  var tempo  = require('../');
   var redis  = require('redis').createClient();
 
   var syncer = new tempo.Syncer(redis);
@@ -25,7 +26,7 @@ exports['test offset'] = function (test) {
   }, 400);
 
   setTimeout(#{
-    redis.end();
+    redis.quit();
     test.done();
   }, 600);
 };
