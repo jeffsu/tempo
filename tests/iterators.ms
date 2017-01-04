@@ -1,7 +1,8 @@
 var tempo = require('../');
+var per = 500;
 
 exports['test iterator'] = function (test) {
-  var counter = new tempo.Counter({ per: 100, buckets: 5 });
+  var counter = new tempo.Counter({ per: per, buckets: 5 });
   counter.inc('hello');
   counter.inc('goodbye', 2);
 
@@ -18,7 +19,7 @@ exports['test iterator'] = function (test) {
       if (i == 2) test.equal(count, 1);
       i++;
     });
-  }, 200);
+  }, 2 * per);
 
   setTimeout(function () {
     counter.eachCount('hello', 'goodbye', function (count1, count2, time) {
@@ -27,7 +28,7 @@ exports['test iterator'] = function (test) {
       i++;
     });
     test.done();
-  }, 300);
+  }, 3 * per);
 };
 
 

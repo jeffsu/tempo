@@ -1,32 +1,33 @@
 var tempo  = require('../');
+var per = 500;
 
 exports['test offset'] = function (test) {
   var redis  = require('redis').createClient();
 
   var syncer = new tempo.Syncer(redis);
 
-  var counter1 = syncer.counter({ per: 100, buckets: 8, namespace: 'foo' });
+  var counter1 = syncer.counter({ per: per, buckets: 8, namespace: 'foo' });
   counter1.inc('hello');
 
-  var counter2 = syncer.counter({ per: 100, buckets: 8, namespace: 'foo', offset: 2 });
+  var counter2 = syncer.counter({ per: per, buckets: 8, namespace: 'foo', offset: 2 });
 
   setTimeout(#{
     test.equal(counter1.getCount('hello'), 1);
     test.equal(counter2.getCount('hello'), 0);
-  }, 100);
+  }, per);
 
 
   setTimeout(#{
     syncer.sync();
-  }, 300);
+  }, 3 * per);
 
   setTimeout(#{
     test.equal(counter1.getCount('hello'), 1);
     test.equal(counter2.getCount('hello'), 1);
-  }, 400);
+  }, 4 * per);
 
   setTimeout(#{
     redis.quit();
     test.done();
-  }, 600);
+  }, 6 * per);
 };

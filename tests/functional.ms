@@ -1,9 +1,16 @@
+var timing = 0;
+var per = 500;
+
+function later(cb) {
+  setTimeout(cb, timing += per);
+}
+
 module.exports['test sync'] = function (test) {
   var tempo = require('../');
   var redis = require('redis').createClient();
 
-  var syncer   = new tempo.Syncer(redis);
-  var options  = { per: 100, buckets: 5, namespace: 'foo' + (new Date).getTime() };
+  var syncer = new tempo.Syncer(redis);
+  var options = { per: per, buckets: 5, namespace: 'foo' + (new Date).getTime() };
 
   var counter1 = syncer.counter(options);
   var counter2 = syncer.counter(options);
@@ -27,8 +34,3 @@ module.exports['test sync'] = function (test) {
     test.done();
   });
 };
-
-var timing = 0;
-function later(cb) {
-  setTimeout(cb, timing += 100);
-}

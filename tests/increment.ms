@@ -1,7 +1,8 @@
 var tempo = require('../');
+var per = 500;
 
 exports['test incrementing'] = function (test) {
-  var counter = new tempo.Counter({ per: 100, buckets: 5 });
+  var counter = new tempo.Counter({ per: per, buckets: 5 });
   counter.inc('hello');
   test.equal(counter.getCount('hello'), 1);
 
@@ -12,7 +13,7 @@ exports['test incrementing'] = function (test) {
 };
 
 exports['test timed incrementing'] = function (test) {
-  var counter = new tempo.Counter({ per: 100, buckets: 5 });
+  var counter = new tempo.Counter({ per: per, buckets: 5 });
   counter.inc('hello');
   test.equal(counter.getCount('hello'), 1);
 
@@ -24,16 +25,16 @@ exports['test timed incrementing'] = function (test) {
     test.equal(counter.getIdxVal('hello', 0), 3);
     test.equal(counter.getIdxVal('hello', 1), 0);
     counter.inc('hello', 2);
-  }, 100);
+  }, per);
 
   setTimeout(function () { 
     test.equal(counter.getIdxVal('hello', 0), 3);
     test.equal(counter.getIdxVal('hello', 4), 2);
     test.equal(counter.getCount('hello'), 5);
-  }, 300);
+  }, 3 * per);
 
   setTimeout(function () { 
     test.equal(counter.getCount('hello'), 0);
     test.done();
-  }, 600);
+  }, 6 * per);
 };

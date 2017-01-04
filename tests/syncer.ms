@@ -31,7 +31,8 @@ exports['test pullMulti'] = function (test) {
 
 exports['test pullMulti async'] = function (test) {
   var syncer = new tempo.Syncer();
-  var counter = syncer.counter({ per: 100, buckets: 5, namespace: 'foo' });
+  var per = 500;
+  var counter = syncer.counter({ per: per, buckets: 5, namespace: 'foo' });
   counter.inc('hello');
 
   var multi = [];
@@ -43,10 +44,49 @@ exports['test pullMulti async'] = function (test) {
   setTimeout(function () {
     handlers.forEach(function (h) { h(results) });
     test.equal(counter.getIdxVal('hello', 0), 11);
-  }, 100);
+  }, per);
 
   setTimeout(function () {
     test.equal(counter.getCount('hello'), 11);
     test.done();
-  }, 300);
+  }, 2 * per);
 };
+
+exports['test quick sync'] = function (test) {
+  var redis = {
+    multi: function (multi) {
+      test.equal(multi.filter(function (cmd) {
+        return cmd[0] == 'HGETALL'
+      }).length, 2)
+      return {
+        exec: function (cb) {
+          cb(null, [
+            {},
+            {},
+            { hello: 1 },
+            { hello: 2 },
+          ]);
+        }
+      };
+    }
+  }
+
+  var syncer = new tempo.Syncer(redis);
+  var per = 500;
+  var counter = syncer.counter({ per: per, buckets: 5, namespace: 'quick' });
+
+  counter.increment('hello')
+
+  setTimeout(function () {
+    syncer.sync(function () {
+      test.equal(counter.getCount('hello'), 3)
+      counter.increment('hello')
+      test.equal(counter.getCount('hello'), 4)
+      test.equal(counter.getIdxVal('hello', 0), 2)
+      test.equal(counter.getIdxVal('hello', 4), 2)
+      test.done()
+    }, {
+      quick: true
+    })
+  }, per);
+}
