@@ -1,5 +1,5 @@
 var tempo = require('../');
-var per = 500;
+var per = 200;
 
 exports['test incrementing'] = function (test) {
   var counter = new tempo.Counter({ per: per, buckets: 5 });

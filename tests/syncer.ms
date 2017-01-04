@@ -1,8 +1,9 @@
 var tempo = require('../');
+var per = 200;
 
 exports['test pushMulti'] = function (test) {
   var syncer = new tempo.Syncer();
-  var counter = syncer.counter({ per: 100, buckets: 5, namespace: 'foo' });
+  var counter = syncer.counter({ per: per, buckets: 5, namespace: 'foo' });
   counter.inc('hello');
 
   var multi = [];
@@ -16,7 +17,7 @@ exports['test pushMulti'] = function (test) {
 
 exports['test pullMulti'] = function (test) {
   var syncer = new tempo.Syncer();
-  var counter = syncer.counter({ per: 100, buckets: 5, namespace: 'foo' });
+  var counter = syncer.counter({ per: per, buckets: 5, namespace: 'foo' });
   counter.inc('hello');
 
   var multi = [];
@@ -31,7 +32,6 @@ exports['test pullMulti'] = function (test) {
 
 exports['test pullMulti async'] = function (test) {
   var syncer = new tempo.Syncer();
-  var per = 500;
   var counter = syncer.counter({ per: per, buckets: 5, namespace: 'foo' });
   counter.inc('hello');
 
@@ -72,7 +72,6 @@ exports['test quick sync'] = function (test) {
   }
 
   var syncer = new tempo.Syncer(redis);
-  var per = 500;
   var counter = syncer.counter({ per: per, buckets: 5, namespace: 'quick' });
 
   counter.increment('hello')

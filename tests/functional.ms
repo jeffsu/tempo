@@ -1,5 +1,5 @@
 var timing = 0;
-var per = 500;
+var per = 200;
 
 function later(cb) {
   setTimeout(cb, timing += per);

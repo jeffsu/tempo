@@ -1,5 +1,5 @@
 var tempo  = require('../');
-var per = 500;
+var per = 200;
 
 exports['test offset'] = function (test) {
   var redis  = require('redis').createClient();
