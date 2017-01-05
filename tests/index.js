@@ -8,5 +8,6 @@ require('nodeunit')
     'tests/increment.ms',
     'tests/iterators.ms',
     'tests/syncer.ms',
-    'tests/offsets.ms'
+    'tests/offsets.ms',
+    'tests/interface.ms'
   ]);
